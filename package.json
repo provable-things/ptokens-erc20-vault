@@ -1,0 +1,36 @@
+{
+  "name": "ptokens-perc20-smart-contract",
+  "version": "0.1.0",
+  "description": "The pToken pERC20-on-EOS smart-contract",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com/provable-things/ptokens-perc20-smart-contract.git"
+  },
+  "keywords": [
+    "provable",
+    "ethereum",
+    "defi",
+    "crypto",
+    "eos"
+  ],
+  "author": "Greg Kapka (greg@oraclize.it)",
+  "license": "MIT",
+  "dependencies": {
+    "docopt": "^0.6.2",
+    "ramda": "^0.27.1"
+  },
+  "devDependencies": {
+    "eslint": "^5.14.1",
+    "eslint-config-standard": "^12.0.0",
+    "eslint-plugin-import": "^2.16.0",
+    "eslint-plugin-mocha": "^5.3.0",
+    "eslint-plugin-node": "^8.0.1",
+    "eslint-plugin-promise": "^4.0.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "mocha": "^6.2.0"
+  }
+}
