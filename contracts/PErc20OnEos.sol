@@ -69,4 +69,16 @@ contract PErc20OnEos {
         emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
         return true;
     }
+
+    function pegOut(
+        address _tokenRecipient,
+        address _tokenAddress,
+        uint256 _tokenAmount
+    )
+        external
+        onlyPNetwork
+        returns (bool)
+    {
+        return getERC20Interface(_tokenAddress).transfer(_tokenRecipient, _tokenAmount);
+    }
 }
