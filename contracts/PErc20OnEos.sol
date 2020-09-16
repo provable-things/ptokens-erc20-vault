@@ -2,9 +2,10 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract PERC20 {
+contract PErc20OnEos {
     address public PNETWORK;
-    mapping(address => bool) public SUPPORTED_TOKENS;
+    mapping (address => bool) public SUPPORTED_TOKENS;
+    event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
     constructor() public {
         PNETWORK = msg.sender;
@@ -13,7 +14,7 @@ contract PERC20 {
     function getERC20Interface(
         address _address
     )
-        view
+        pure
         internal
         returns (IERC20)
     {
@@ -44,6 +45,28 @@ contract PERC20 {
         returns (bool SUCCESS)
     {
         SUPPORTED_TOKENS[_tokenAddress] = false;
+        return true;
+    }
+
+    function checkTokenIsSupported(
+        address _tokenAddress
+    )
+        internal
+    {
+        require(SUPPORTED_TOKENS[_tokenAddress], "Token at supplied address is NOT supported!");
+    }
+
+    function pegIn(
+        uint256 _tokenAmount,
+        address _tokenAddress,
+        string calldata _destinationAddress
+    )
+        external
+        returns (bool)
+    {
+        checkTokenIsSupported(_tokenAddress);
+        getERC20Interface(_tokenAddress).transferFrom(msg.sender, address(this), _tokenAmount);
+        emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
         return true;
     }
 }
