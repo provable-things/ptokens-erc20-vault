@@ -65,6 +65,7 @@ contract PErc20OnEos {
         returns (bool)
     {
         checkTokenIsSupported(_tokenAddress);
+        require(_tokenAmount > 0, "Token amount must be greater than zero!");
         getERC20Interface(_tokenAddress).transferFrom(msg.sender, address(this), _tokenAmount);
         emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
         return true;

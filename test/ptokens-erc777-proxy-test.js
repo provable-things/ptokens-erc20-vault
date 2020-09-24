@@ -40,6 +40,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const INSUFFICIENT_BALANCE_ERR = 'ERC20: transfer amount exceeds balance'
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
+  const INSUFFICIENT_TOKEN_AMOUNT_ERR = 'Token amount must be greater than zero!'
 
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
@@ -107,6 +108,16 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     await expectRevert(
       pegIn(pErc20Methods, TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
       INSUFFICIENT_ALLOWANCE_ERR
+    )
+  })
+
+  it('Should NOT peg in if token is supported and sufficient allowance approved, but token amount is 0', async () => {
+    const tokenAmount = 0
+    await addTokenSupport(pErc20Methods, TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await givePErc20Allowance(tokenMethods, TOKEN_HOLDER_ADDRESS, PERC20_ADDRESS, TOKEN_AMOUNT)
+    await expectRevert(
+      pegIn(pErc20Methods, TOKEN_ADDRESS, tokenAmount, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
+      INSUFFICIENT_TOKEN_AMOUNT_ERR,
     )
   })
 
