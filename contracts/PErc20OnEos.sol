@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract PErc20OnEos {
     address public PNETWORK;
+    address [] SUPPORTED_TOKEN_ADDRESSES;
     mapping (address => bool) public SUPPORTED_TOKENS;
     event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
@@ -34,6 +35,7 @@ contract PErc20OnEos {
         returns (bool SUCCESS)
     {
         SUPPORTED_TOKENS[_tokenAddress] = true;
+        SUPPORTED_TOKEN_ADDRESSES.push(_tokenAddress);
         return true;
     }
 
@@ -81,5 +83,29 @@ contract PErc20OnEos {
         returns (bool)
     {
         return getERC20Interface(_tokenAddress).transfer(_tokenRecipient, _tokenAmount);
+    }
+
+    function getTokenBalance(
+        address _tokenAddress
+    )
+        internal
+        returns (uint256)
+    {
+        return getERC20Interface(_tokenAddress).balanceOf(address(this));
+    }
+
+    function migrate(
+        address payable _to
+    )
+        external
+        onlyPNetwork
+    {
+        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
+            address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
+            if (SUPPORTED_TOKENS[tokenAddress]) {
+                getERC20Interface(tokenAddress).transfer(_to, getTokenBalance(tokenAddress));
+            }
+        }
+        selfdestruct(_to);
     }
 }
