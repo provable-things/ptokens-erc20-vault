@@ -7,6 +7,7 @@ const { generateBytecode } = require('./lib/generate-bytecode')
 const HELP_ARG = '--help'
 const GENERATE_CMD = 'generate'
 const VERSION_ARG = '--version'
+const TOKEN_ADDRESSES_ARGS = '<tokenAddress>'
 
 const USAGE_INFO = `
 ❍ pERC20 Contract Bytecode Generator:
@@ -20,9 +21,9 @@ const USAGE_INFO = `
 A tool to generate the bytecode for the pERC20 ethereum smart-contract.
 
 ❍ Usage:
-  ./bytecode-generator.js ${GENERATE_CMD}
   ./bytecode-generator.js ${HELP_ARG}
   ./bytecode-generator.js ${VERSION_ARG}
+  ./bytecode-generator.js ${GENERATE_CMD} ${TOKEN_ADDRESSES_ARGS}...
 
 ❍ Commands:
 
@@ -36,7 +37,7 @@ A tool to generate the bytecode for the pERC20 ethereum smart-contract.
 const main = _ => {
   const CLI_ARGS = docopt(USAGE_INFO, { version })
   if (CLI_ARGS[GENERATE_CMD])
-    return generateBytecode()
+    return generateBytecode(CLI_ARGS[TOKEN_ADDRESSES_ARGS])
   else
     return console.info(USAGE_INFO)
 }
