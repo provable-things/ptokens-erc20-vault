@@ -37,6 +37,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const TOKEN_HOLDER_BALANCE = 1e6
   const DESTINATION_ADDRESS = 'EOS_ADDRESS'
   const NON_PNETWORK_ERR = 'Caller must be PNETWORK address!'
+  const MIGRATION_DESTINATION_ADDRESS = web3.utils.randomHex(20)
   const INSUFFICIENT_BALANCE_ERR = 'ERC20: transfer amount exceeds balance'
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
@@ -166,5 +167,27 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
       .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
     const tokenHolderBalanceAfterPegOut = await tokenMethods.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
+  })
+
+  it('PNETWORK_ADDRESS can migrate', async () => {
+    await addTokenSupport(pErc20Methods, TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await givePErc20Allowance(tokenMethods, TOKEN_HOLDER_ADDRESS, PERC20_ADDRESS, TOKEN_AMOUNT)
+    const migratedAddressTokenBalanceBefore = await tokenMethods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    const pErc20TokenBalanceBeforePegIn = await tokenMethods.balanceOf(PERC20_ADDRESS).call()
+    const tx = await pegIn(pErc20Methods, TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    assertPegInEvent(tx.events.PegIn, TOKEN_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+    const pErc20TokenBalanceAfterPegIn = await tokenMethods.balanceOf(PERC20_ADDRESS).call()
+    assert.strictEqual(parseInt(pErc20TokenBalanceAfterPegIn), parseInt(pErc20TokenBalanceBeforePegIn) + TOKEN_AMOUNT)
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
+    await pErc20Methods.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const migratedAddressTokenBalanceAfter = await tokenMethods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
+  })
+
+  it('Non PNETWORK_ADDRESS cannot migrate', async () => {
+    await expectRevert(
+      pErc20Methods.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      NON_PNETWORK_ERR,
+    )
   })
 })
