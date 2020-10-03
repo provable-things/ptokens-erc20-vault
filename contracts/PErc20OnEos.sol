@@ -5,11 +5,18 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract PErc20OnEos {
     address public PNETWORK;
     address [] SUPPORTED_TOKEN_ADDRESSES;
-    mapping (address => bool) public SUPPORTED_TOKENS;
+    mapping (address => bool) public IS_TOKEN_SUPPORTED;
     event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
-    constructor() public {
+    constructor(
+        address [] memory _tokensToSupport
+    ) public {
         PNETWORK = msg.sender;
+        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
+            address tokenAddress = _tokensToSupport[i];
+            IS_TOKEN_SUPPORTED[tokenAddress] = true;
+            SUPPORTED_TOKEN_ADDRESSES.push(tokenAddress);
+        }
     }
 
     function getERC20Interface(
@@ -34,7 +41,7 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool SUCCESS)
     {
-        SUPPORTED_TOKENS[_tokenAddress] = true;
+        IS_TOKEN_SUPPORTED[_tokenAddress] = true;
         SUPPORTED_TOKEN_ADDRESSES.push(_tokenAddress);
         return true;
     }
@@ -46,7 +53,7 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool SUCCESS)
     {
-        SUPPORTED_TOKENS[_tokenAddress] = false;
+        IS_TOKEN_SUPPORTED[_tokenAddress] = false;
         return true;
     }
 
@@ -55,7 +62,7 @@ contract PErc20OnEos {
     )
         internal
     {
-        require(SUPPORTED_TOKENS[_tokenAddress], "Token at supplied address is NOT supported!");
+        require(IS_TOKEN_SUPPORTED[_tokenAddress], "Token at supplied address is NOT supported!");
     }
 
     function pegIn(
@@ -102,7 +109,7 @@ contract PErc20OnEos {
     {
         for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
             address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
-            if (SUPPORTED_TOKENS[tokenAddress]) {
+            if (IS_TOKEN_SUPPORTED[tokenAddress]) {
                 getERC20Interface(tokenAddress).transfer(_to, getTokenBalance(tokenAddress));
             }
         }

@@ -13,6 +13,9 @@ const getContract = (_web3, _artifact, _constructorParams = []) =>
       .catch(reject)
   )
 
+const getRandomEthAddress = _web3 =>
+  _web3.utils.randomHex(20)
+
 const addTokenSupport = (_pErc20Methods, _tokenAddress, _from, _gasLimit = 3e6) =>
   _pErc20Methods.addSupportedToken(_tokenAddress).send({ from: _from, gas: _gasLimit })
 
@@ -37,7 +40,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const TOKEN_HOLDER_BALANCE = 1e6
   const DESTINATION_ADDRESS = 'EOS_ADDRESS'
   const NON_PNETWORK_ERR = 'Caller must be PNETWORK address!'
-  const MIGRATION_DESTINATION_ADDRESS = web3.utils.randomHex(20)
+  const MIGRATION_DESTINATION_ADDRESS = getRandomEthAddress(web3)
   const INSUFFICIENT_BALANCE_ERR = 'ERC20: transfer amount exceeds balance'
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
@@ -45,7 +48,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
-    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact)
+    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [[]])
     pErc20Methods = prop('methods', pERC20Contract)
     PERC20_ADDRESS = prop('_address', pERC20Contract)
     const tokenContract = await getContract(web3, TOKEN_ARTIFACT)
@@ -58,38 +61,38 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   })
 
   it('PNETWORK_ADDRESS can add appoved token address', async () => {
-    let tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    let tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(!tokenIsSupported)
     await pErc20Methods.addSupportedToken(TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(tokenIsSupported)
   })
 
   it('NON_PNETWORK_ADDRESS cannot add appoved token address', async () => {
-    let tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    let tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(!tokenIsSupported)
     await expectRevert(
       pErc20Methods.addSupportedToken(TOKEN_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
-    tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(!tokenIsSupported)
   })
 
   it('PNETWORK_ADDRESS can remove appoved token address', async () => {
     await pErc20Methods.addSupportedToken(TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(tokenIsSupported)
     await pErc20Methods.removeSupportedToken(TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(!tokenIsSupported)
   })
 
   it('NON_PNETWORK_ADDRESS cannot remove appoved token address', async () => {
-    let tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    let tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(!tokenIsSupported)
     await pErc20Methods.addSupportedToken(TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await pErc20Methods.SUPPORTED_TOKENS(TOKEN_ADDRESS).call()
+    tokenIsSupported = await pErc20Methods.IS_TOKEN_SUPPORTED(TOKEN_ADDRESS).call()
     assert(tokenIsSupported)
     await expectRevert(
       pErc20Methods.removeSupportedToken(TOKEN_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
@@ -189,5 +192,14 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
       pErc20Methods.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
+  })
+
+  it('Token addresses sent to constructor should be supported', async () => {
+    const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
+    const newContract = await getContract(web3, PErc20OnEosArtifact, [supportedTokenAddresses])
+    const tokensAreSupportedBools = await Promise.all(
+      supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
+    )
+    tokensAreSupportedBools.map(_tokenIsSupported => assert(_tokenIsSupported))
   })
 })
