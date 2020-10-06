@@ -103,9 +103,7 @@ contract PErc20OnEos {
     {
         for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
             address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
-            if (IS_TOKEN_SUPPORTED[tokenAddress]) {
-                IERC20(tokenAddress).safeTransfer(_to, getTokenBalance(tokenAddress));
-            }
+            _migrateSingle(_to, tokenAddress);
         }
     }
 
@@ -127,8 +125,18 @@ contract PErc20OnEos {
         external
         onlyPNetwork
     {
+        _migrateSingle(_to, _tokenAddress);
+    }
+
+    function _migrateSingle(
+        address payable _to,
+        address _tokenAddress
+    )
+        private
+    {
         if (IS_TOKEN_SUPPORTED[_tokenAddress]) {
             IERC20(_tokenAddress).safeTransfer(_to, getTokenBalance(_tokenAddress));
+            IS_TOKEN_SUPPORTED[_tokenAddress] = false;
         }
     }
 }
