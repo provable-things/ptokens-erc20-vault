@@ -2,29 +2,31 @@ pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 
 contract PErc20OnEos {
     using SafeERC20 for IERC20;
-
+    using EnumerableSet for EnumerableSet.AddressSet;
+    EnumerableSet.AddressSet private supportedTokens;
     address public PNETWORK;
-    address [] SUPPORTED_TOKEN_ADDRESSES;
-    mapping (address => bool) public IS_TOKEN_SUPPORTED;
     event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
     constructor(
         address [] memory _tokensToSupport
     ) public {
         PNETWORK = msg.sender;
-        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
-            address tokenAddress = _tokensToSupport[i];
-            IS_TOKEN_SUPPORTED[tokenAddress] = true;
-            SUPPORTED_TOKEN_ADDRESSES.push(tokenAddress);
+        for (uint256 i = 0; i < _tokensToSupport.length; i++) {
+            supportedTokens.add(_tokensToSupport[i]);
         }
     }
 
     modifier onlyPNetwork() {
         require(msg.sender == PNETWORK, "Caller must be PNETWORK address!");
         _;
+    }
+
+    function IS_TOKEN_SUPPORTED(address _token) external view returns(bool) {
+        return supportedTokens.contains(_token);
     }
 
     function addSupportedToken(
@@ -34,8 +36,7 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool SUCCESS)
     {
-        IS_TOKEN_SUPPORTED[_tokenAddress] = true;
-        SUPPORTED_TOKEN_ADDRESSES.push(_tokenAddress);
+        supportedTokens.add(_tokenAddress);
         return true;
     }
 
@@ -46,16 +47,8 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool SUCCESS)
     {
-        IS_TOKEN_SUPPORTED[_tokenAddress] = false;
+        supportedTokens.remove(_tokenAddress);
         return true;
-    }
-
-    function checkTokenIsSupported(
-        address _tokenAddress
-    )
-        internal
-    {
-        require(IS_TOKEN_SUPPORTED[_tokenAddress], "Token at supplied address is NOT supported!");
     }
 
     function pegIn(
@@ -66,7 +59,7 @@ contract PErc20OnEos {
         external
         returns (bool)
     {
-        checkTokenIsSupported(_tokenAddress);
+        require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
         emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
@@ -101,8 +94,8 @@ contract PErc20OnEos {
         external
         onlyPNetwork
     {
-        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
-            address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
+        for (uint256 i = 0; i < supportedTokens.length(); i++) {
+            address tokenAddress = supportedTokens.at(i);
             _migrateSingle(_to, tokenAddress);
         }
     }
@@ -111,9 +104,9 @@ contract PErc20OnEos {
         external
         onlyPNetwork
     {
-        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
-            address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
-            require(IS_TOKEN_SUPPORTED[tokenAddress] && IERC20(tokenAddress).balanceOf(address(this)) == 0, "Balance of supported tokens must be 0");
+        for (uint256 i = 0; i < supportedTokens.length(); i++) {
+            address tokenAddress = supportedTokens.at(i);
+            require(IERC20(tokenAddress).balanceOf(address(this)) == 0, "Balance of supported tokens must be 0");
         }
         selfdestruct(msg.sender);
     }
@@ -134,9 +127,9 @@ contract PErc20OnEos {
     )
         private
     {
-        if (IS_TOKEN_SUPPORTED[_tokenAddress]) {
+        if (supportedTokens.contains(_tokenAddress)) {
             IERC20(_tokenAddress).safeTransfer(_to, getTokenBalance(_tokenAddress));
-            IS_TOKEN_SUPPORTED[_tokenAddress] = false;
+            supportedTokens.remove(_tokenAddress);
         }
     }
 }
