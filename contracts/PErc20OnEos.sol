@@ -19,16 +19,6 @@ contract PErc20OnEos {
         }
     }
 
-    function getERC20Interface(
-        address _address
-    )
-        pure
-        internal
-        returns (IERC20)
-    {
-        return IERC20(_address);
-    }
-
     modifier onlyPNetwork() {
         require(msg.sender == PNETWORK, "Caller must be PNETWORK address!");
         _;
@@ -75,7 +65,7 @@ contract PErc20OnEos {
     {
         checkTokenIsSupported(_tokenAddress);
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
-        getERC20Interface(_tokenAddress).transferFrom(msg.sender, address(this), _tokenAmount);
+        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _tokenAmount);
         emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
         return true;
     }
@@ -89,7 +79,7 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool)
     {
-        return getERC20Interface(_tokenAddress).transfer(_tokenRecipient, _tokenAmount);
+        return IERC20(_tokenAddress).transfer(_tokenRecipient, _tokenAmount);
     }
 
     function getTokenBalance(
@@ -98,7 +88,7 @@ contract PErc20OnEos {
         internal
         returns (uint256)
     {
-        return getERC20Interface(_tokenAddress).balanceOf(address(this));
+        return IERC20(_tokenAddress).balanceOf(address(this));
     }
 
     function migrate(
@@ -110,7 +100,7 @@ contract PErc20OnEos {
         for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
             address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
             if (IS_TOKEN_SUPPORTED[tokenAddress]) {
-                getERC20Interface(tokenAddress).transfer(_to, getTokenBalance(tokenAddress));
+                IERC20(tokenAddress).transfer(_to, getTokenBalance(tokenAddress));
             }
         }
         selfdestruct(_to);
@@ -124,7 +114,7 @@ contract PErc20OnEos {
         onlyPNetwork
     {
         if (IS_TOKEN_SUPPORTED[_tokenAddress]) {
-            getERC20Interface(_tokenAddress).transfer(_to, getTokenBalance(_tokenAddress));
+            IERC20(_tokenAddress).transfer(_to, getTokenBalance(_tokenAddress));
         }
     }
 }
