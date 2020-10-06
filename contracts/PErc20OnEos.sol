@@ -115,4 +115,16 @@ contract PErc20OnEos {
         }
         selfdestruct(_to);
     }
+
+    function migrateSingle(
+        address payable _to,
+        address _tokenAddress
+    )
+        external
+        onlyPNetwork
+    {
+        if (IS_TOKEN_SUPPORTED[_tokenAddress]) {
+            getERC20Interface(_tokenAddress).transfer(_to, getTokenBalance(_tokenAddress));
+        }
+    }
 }

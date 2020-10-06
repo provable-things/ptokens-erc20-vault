@@ -202,4 +202,28 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     )
     tokensAreSupportedBools.map(_tokenIsSupported => assert(_tokenIsSupported))
   })
+
+  it('PNETWORK_ADDRESS can migrate single', async () => {
+    await addTokenSupport(pErc20Methods, TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await givePErc20Allowance(tokenMethods, TOKEN_HOLDER_ADDRESS, PERC20_ADDRESS, TOKEN_AMOUNT)
+    const migratedAddressTokenBalanceBefore = await tokenMethods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    const pErc20TokenBalanceBeforePegIn = await tokenMethods.balanceOf(PERC20_ADDRESS).call()
+    const tx = await pegIn(pErc20Methods, TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    assertPegInEvent(tx.events.PegIn, TOKEN_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+    const pErc20TokenBalanceAfterPegIn = await tokenMethods.balanceOf(PERC20_ADDRESS).call()
+    assert.strictEqual(parseInt(pErc20TokenBalanceAfterPegIn), parseInt(pErc20TokenBalanceBeforePegIn) + TOKEN_AMOUNT)
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
+    await pErc20Methods.migrateSingle(MIGRATION_DESTINATION_ADDRESS, TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const migratedAddressTokenBalanceAfter = await tokenMethods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
+  })
+
+  it('Non PNETWORK_ADDRESS cannot migrateSingle', async () => {
+    await expectRevert(
+      pErc20Methods
+        .migrateSingle(MIGRATION_DESTINATION_ADDRESS, TOKEN_ADDRESS)
+        .send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      NON_PNETWORK_ERR,
+    )
+  })
 })
