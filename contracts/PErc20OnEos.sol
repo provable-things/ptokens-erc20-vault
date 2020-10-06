@@ -4,8 +4,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
 import "./IWETH.sol";
+import "./Withdrawable.sol";
 
-contract PErc20OnEos {
+contract PErc20OnEos is Withdrawable {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private supportedTokens;
@@ -33,6 +34,15 @@ contract PErc20OnEos {
     function IS_TOKEN_SUPPORTED(address _token) external view returns(bool) {
         return supportedTokens.contains(_token);
     }
+
+    function _owner() internal override returns(address) {
+        return PNETWORK;
+    }
+
+    function adminWitrawAllowed(address asset) internal override view returns(uint) {
+        return supportedTokens.contains(asset) ? 0 : super.adminWitrawAllowed(asset);
+    }
+
 
     function addSupportedToken(
         address _tokenAddress
