@@ -107,7 +107,17 @@ contract PErc20OnEos {
                 IERC20(tokenAddress).safeTransfer(_to, getTokenBalance(tokenAddress));
             }
         }
-        selfdestruct(_to);
+    }
+
+    function destroy()
+        external
+        onlyPNetwork
+    {
+        for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
+            address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
+            require(IS_TOKEN_SUPPORTED[tokenAddress] && IERC20(tokenAddress).balanceOf(address(this)) == 0, "Balance of supported tokens must be 0");
+        }
+        selfdestruct(msg.sender);
     }
 
     function migrateSingle(
