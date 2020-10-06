@@ -45,10 +45,11 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
   const INSUFFICIENT_TOKEN_AMOUNT_ERR = 'Token amount must be greater than zero!'
+  const FAKE_WETH = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
-    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [[]])
+    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [[], FAKE_WETH])
     pErc20Methods = prop('methods', pERC20Contract)
     PERC20_ADDRESS = prop('_address', pERC20Contract)
     const tokenContract = await getContract(web3, TOKEN_ARTIFACT)
@@ -196,7 +197,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
-    const newContract = await getContract(web3, PErc20OnEosArtifact, [supportedTokenAddresses])
+    const newContract = await getContract(web3, PErc20OnEosArtifact, [supportedTokenAddresses, FAKE_WETH])
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )

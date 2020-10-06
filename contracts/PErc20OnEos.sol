@@ -3,21 +3,26 @@ pragma solidity ^0.6.0;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
+import "./IWETH.sol";
 
 contract PErc20OnEos {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
     EnumerableSet.AddressSet private supportedTokens;
     address public PNETWORK;
+    IWETH public weth;
+
     event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
     constructor(
-        address [] memory _tokensToSupport
+        address [] memory _tokensToSupport,
+        address _weth
     ) public {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {
             supportedTokens.add(_tokensToSupport[i]);
         }
+        weth = IWETH(_weth);
     }
 
     modifier onlyPNetwork() {
@@ -65,6 +70,18 @@ contract PErc20OnEos {
         return true;
     }
 
+    function pegInEth(string calldata _destinationAddress)
+        external
+        payable
+        returns (bool)
+    {
+        require(supportedTokens.contains(address(weth)), "WETH is NOT supported!");
+        require(msg.value > 0, "Ethers amount must be greater than zero!");
+        weth.deposit.value(msg.value)();
+        emit PegIn(address(weth), msg.sender, msg.value, _destinationAddress);
+        return true;
+    }
+
     function pegOut(
         address _tokenRecipient,
         address _tokenAddress,
@@ -75,6 +92,19 @@ contract PErc20OnEos {
         returns (bool)
     {
         IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+        return true;
+    }
+
+    function pegOutEth(
+        address payable _recipient,
+        uint256 _amount
+    )
+        external
+        onlyPNetwork
+        returns (bool)
+    {
+        weth.withdraw(_amount);
+        _recipient.transfer(_amount);
         return true;
     }
 
