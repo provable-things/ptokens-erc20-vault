@@ -1,8 +1,11 @@
 pragma solidity ^0.6.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 contract PErc20OnEos {
+    using SafeERC20 for IERC20;
+
     address public PNETWORK;
     address [] SUPPORTED_TOKEN_ADDRESSES;
     mapping (address => bool) public IS_TOKEN_SUPPORTED;
@@ -65,7 +68,7 @@ contract PErc20OnEos {
     {
         checkTokenIsSupported(_tokenAddress);
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
-        IERC20(_tokenAddress).transferFrom(msg.sender, address(this), _tokenAmount);
+        IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
         emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
         return true;
     }
@@ -79,7 +82,8 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool)
     {
-        return IERC20(_tokenAddress).transfer(_tokenRecipient, _tokenAmount);
+        IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+        return true;
     }
 
     function getTokenBalance(
@@ -100,7 +104,7 @@ contract PErc20OnEos {
         for (uint256 i = 0; i < SUPPORTED_TOKEN_ADDRESSES.length; i++) {
             address tokenAddress = SUPPORTED_TOKEN_ADDRESSES[i];
             if (IS_TOKEN_SUPPORTED[tokenAddress]) {
-                IERC20(tokenAddress).transfer(_to, getTokenBalance(tokenAddress));
+                IERC20(tokenAddress).safeTransfer(_to, getTokenBalance(tokenAddress));
             }
         }
         selfdestruct(_to);
@@ -114,7 +118,7 @@ contract PErc20OnEos {
         onlyPNetwork
     {
         if (IS_TOKEN_SUPPORTED[_tokenAddress]) {
-            IERC20(_tokenAddress).transfer(_to, getTokenBalance(_tokenAddress));
+            IERC20(_tokenAddress).safeTransfer(_to, getTokenBalance(_tokenAddress));
         }
     }
 }
