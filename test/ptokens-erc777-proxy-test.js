@@ -1,9 +1,10 @@
 /* eslint-disable no-undef */
 const assert = require('assert')
-const { prop } = require('ramda')
+const { prop, find, values } = require('ramda')
 const TOKEN_ARTIFACT = artifacts.require('ERC20_TOKEN')
+const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
 const PErc20OnEosArtifact = artifacts.require('PErc20OnEos')
-const { expectRevert } = require('@openzeppelin/test-helpers')
+const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers')
 
 const getContract = (_web3, _artifact, _constructorParams = []) =>
   new Promise((resolve, reject) =>
@@ -226,5 +227,28 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
         .send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
+  })
+
+  it('Automatically pegIn on ERC777 send', async () => {
+    const eventABI = find(
+      x => x.name === 'PegIn' && x.type === 'event',
+      PErc20OnEosArtifact.abi
+    )
+    const eventSignature = web3.eth.abi.encodeEventSignature(eventABI)
+    const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    await pErc20Methods.addSupportedToken(erc777.options.address).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+
+    const tag = web3.utils.keccak256('ERC777-pegIn')
+    const userData = web3.eth.abi.encodeParameters(['bytes32', 'string'], [tag, DESTINATION_ADDRESS])
+    const res = await erc777.methods.send(PERC20_ADDRESS, TOKEN_AMOUNT, userData)
+      .send({ from: TOKEN_HOLDER_ADDRESS })
+
+    const event = find(e => e.raw.topics[0] === eventSignature, values(res.events))
+    assert(event != null, 'PegIn event not found')
+    const decoded = web3.eth.abi.decodeLog(eventABI.inputs, event.raw.data, event.raw.topics)
+    assert.strictEqual(decoded._tokenAddress, erc777.options.address, '_tokenAddress')
+    assert.strictEqual(decoded._tokenSender, TOKEN_HOLDER_ADDRESS, '_tokenSender')
+    assert.strictEqual(decoded._tokenAmount, TOKEN_AMOUNT.toString(), '_tokenAmount')
+    assert.strictEqual(decoded._destinationAddress, DESTINATION_ADDRESS, '_destinationAddress')
   })
 })
