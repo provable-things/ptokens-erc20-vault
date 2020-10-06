@@ -47,8 +47,7 @@ contract PErc20OnEos {
         onlyPNetwork
         returns (bool SUCCESS)
     {
-        supportedTokens.remove(_tokenAddress);
-        return true;
+        return supportedTokens.remove(_tokenAddress);
     }
 
     function pegIn(
@@ -77,15 +76,6 @@ contract PErc20OnEos {
     {
         IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         return true;
-    }
-
-    function getTokenBalance(
-        address _tokenAddress
-    )
-        internal
-        returns (uint256)
-    {
-        return IERC20(_tokenAddress).balanceOf(address(this));
     }
 
     function migrate(
@@ -128,7 +118,8 @@ contract PErc20OnEos {
         private
     {
         if (supportedTokens.contains(_tokenAddress)) {
-            IERC20(_tokenAddress).safeTransfer(_to, getTokenBalance(_tokenAddress));
+            uint balance = IERC20(_tokenAddress).balanceOf(address(this));
+            IERC20(_tokenAddress).safeTransfer(_to, balance);
             supportedTokens.remove(_tokenAddress);
         }
     }
