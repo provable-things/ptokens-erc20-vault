@@ -1,9 +1,11 @@
 /* eslint-disable no-undef */
 const assert = require('assert')
-const { prop } = require('ramda')
+const { prop, find, values } = require('ramda')
 const TOKEN_ARTIFACT = artifacts.require('ERC20_TOKEN')
+const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
+const WETH_ARTIFACT = artifacts.require('WETH')
 const PErc20OnEosArtifact = artifacts.require('PErc20OnEos')
-const { expectRevert } = require('@openzeppelin/test-helpers')
+const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers')
 
 const getContract = (_web3, _artifact, _constructorParams = []) =>
   new Promise((resolve, reject) =>
@@ -46,9 +48,12 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
   const INSUFFICIENT_TOKEN_AMOUNT_ERR = 'Token amount must be greater than zero!'
 
+  let weth
+
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
-    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [[]])
+    weth = await getContract(web3, WETH_ARTIFACT)
+    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, []])
     pErc20Methods = prop('methods', pERC20Contract)
     PERC20_ADDRESS = prop('_address', pERC20Contract)
     const tokenContract = await getContract(web3, TOKEN_ARTIFACT)
@@ -196,7 +201,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
-    const newContract = await getContract(web3, PErc20OnEosArtifact, [supportedTokenAddresses])
+    const newContract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, supportedTokenAddresses])
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )
@@ -225,5 +230,51 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
         .send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
+  })
+
+  it('Automatically pegIn on ERC777 send', async () => {
+    const eventABI = find(
+      x => x.name === 'PegIn' && x.type === 'event',
+      PErc20OnEosArtifact.abi
+    )
+    const eventSignature = web3.eth.abi.encodeEventSignature(eventABI)
+    const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    await pErc20Methods.addSupportedToken(erc777.options.address).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+
+    const tag = web3.utils.keccak256('ERC777-pegIn')
+    const userData = web3.eth.abi.encodeParameters(['bytes32', 'string'], [tag, DESTINATION_ADDRESS])
+    const res = await erc777.methods.send(PERC20_ADDRESS, TOKEN_AMOUNT, userData)
+      .send({ from: TOKEN_HOLDER_ADDRESS })
+
+    const event = find(e => e.raw.topics[0] === eventSignature, values(res.events))
+    assert(event != null, 'PegIn event not found')
+    const decoded = web3.eth.abi.decodeLog(eventABI.inputs, event.raw.data, event.raw.topics)
+    assert.strictEqual(decoded._tokenAddress, erc777.options.address, '_tokenAddress')
+    assert.strictEqual(decoded._tokenSender, TOKEN_HOLDER_ADDRESS, '_tokenSender')
+    assert.strictEqual(decoded._tokenAmount, TOKEN_AMOUNT.toString(), '_tokenAmount')
+    assert.strictEqual(decoded._destinationAddress, DESTINATION_ADDRESS, '_destinationAddress')
+  })
+
+  it('Should peg in weth', async () => {
+    await addTokenSupport(pErc20Methods, weth.options.address, PNETWORK_ADDRESS)
+
+    const tx = await pErc20Methods.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+
+    assertPegInEvent(tx.events.PegIn, weth.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+    assert.strictEqual(await weth.methods.balanceOf(PERC20_ADDRESS).call(), TOKEN_AMOUNT.toString())
+    assert.strictEqual(await web3.eth.getBalance(PERC20_ADDRESS), '0', 'eth balance must be 0')
+  })
+
+  it('Should peg out weth', async () => {
+    await addTokenSupport(pErc20Methods, weth.options.address, PNETWORK_ADDRESS)
+    await pErc20Methods.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+
+    await pErc20Methods.pegOut(TOKEN_HOLDER_ADDRESS, weth.options.address, TOKEN_AMOUNT).send({ from: PNETWORK_ADDRESS })
+
+    assert.strictEqual(await weth.methods.balanceOf(PERC20_ADDRESS).call(), '0')
+    assert.strictEqual(await web3.eth.getBalance(PERC20_ADDRESS), '0', 'eth balance must be 0')
+    const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+    assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
   })
 })
