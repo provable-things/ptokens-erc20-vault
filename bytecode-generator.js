@@ -23,7 +23,7 @@ A tool to generate the bytecode for the pERC20 ethereum smart-contract.
 ❍ Usage:
   ./bytecode-generator.js ${HELP_ARG}
   ./bytecode-generator.js ${VERSION_ARG}
-  ./bytecode-generator.js ${GENERATE_CMD} ${TOKEN_ADDRESSES_ARGS}...
+  ./bytecode-generator.js ${GENERATE_CMD} [${TOKEN_ADDRESSES_ARGS}]...
 
 ❍ Commands:
 
