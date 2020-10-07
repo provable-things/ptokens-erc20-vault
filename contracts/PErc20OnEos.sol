@@ -42,6 +42,10 @@ contract PErc20OnEos is Withdrawable, IERC777Recipient {
         require(msg.sender == address(weth));
     }
 
+    function setWeth(address _weth) external onlyPNetwork {
+        weth = IWETH(_weth);
+    }
+
     function IS_TOKEN_SUPPORTED(address _token) external view returns(bool) {
         return supportedTokens.contains(_token);
     }
