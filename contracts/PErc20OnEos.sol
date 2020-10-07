@@ -22,8 +22,8 @@ contract PErc20OnEos is Withdrawable, IERC777Recipient {
     event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
 
     constructor(
-        address [] memory _tokensToSupport,
-        address _weth
+        address _weth,
+        address [] memory _tokensToSupport
     ) public {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {

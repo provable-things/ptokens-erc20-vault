@@ -53,8 +53,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
     weth = await getContract(web3, WETH_ARTIFACT)
-
-    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [[], weth.options.address])
+    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, []])
     pErc20Methods = prop('methods', pERC20Contract)
     PERC20_ADDRESS = prop('_address', pERC20Contract)
     const tokenContract = await getContract(web3, TOKEN_ARTIFACT)
@@ -202,7 +201,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
-    const newContract = await getContract(web3, PErc20OnEosArtifact, [supportedTokenAddresses, weth.options.address])
+    const newContract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, supportedTokenAddresses])
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )
