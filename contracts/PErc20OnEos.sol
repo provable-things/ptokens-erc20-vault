@@ -93,7 +93,7 @@ contract PErc20OnEos is Withdrawable {
     }
 
     function pegOut(
-        address _tokenRecipient,
+        address payable _tokenRecipient,
         address _tokenAddress,
         uint256 _tokenAmount
     )
@@ -101,20 +101,12 @@ contract PErc20OnEos is Withdrawable {
         onlyPNetwork
         returns (bool)
     {
-        IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
-        return true;
-    }
-
-    function pegOutEth(
-        address payable _recipient,
-        uint256 _amount
-    )
-        external
-        onlyPNetwork
-        returns (bool)
-    {
-        weth.withdraw(_amount);
-        _recipient.transfer(_amount);
+        if (_tokenAddress == address(weth)) {
+            weth.withdraw(_tokenAmount);
+            _tokenRecipient.transfer(_tokenAmount);
+        } else {
+            IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+        }
         return true;
     }
 
