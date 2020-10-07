@@ -38,6 +38,10 @@ contract PErc20OnEos is Withdrawable, IERC777Recipient {
         _;
     }
 
+    receive() external payable {
+        require(msg.sender == address(weth));
+    }
+
     function IS_TOKEN_SUPPORTED(address _token) external view returns(bool) {
         return supportedTokens.contains(_token);
     }
