@@ -4,7 +4,7 @@ const { prop, find, values } = require('ramda')
 const TOKEN_ARTIFACT = artifacts.require('ERC20_TOKEN')
 const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
 const WETH_ARTIFACT = artifacts.require('WETH')
-const PErc20OnEosArtifact = artifacts.require('PErc20OnEos')
+const PERC20OnEosVaultArtifact = artifacts.require('PERC20OnEosVault')
 const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers')
 
 const getContract = (_web3, _artifact, _constructorParams = []) =>
@@ -53,7 +53,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
     weth = await getContract(web3, WETH_ARTIFACT)
-    const pERC20Contract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, []])
+    const pERC20Contract = await getContract(web3, PERC20OnEosVaultArtifact, [weth.options.address, []])
     pErc20Methods = prop('methods', pERC20Contract)
     PERC20_ADDRESS = prop('_address', pERC20Contract)
     const tokenContract = await getContract(web3, TOKEN_ARTIFACT)
@@ -201,7 +201,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
-    const newContract = await getContract(web3, PErc20OnEosArtifact, [weth.options.address, supportedTokenAddresses])
+    const newContract = await getContract(web3, PERC20OnEosVaultArtifact, [weth.options.address, supportedTokenAddresses])
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )
@@ -235,7 +235,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   it('Automatically pegIn on ERC777 send', async () => {
     const eventABI = find(
       x => x.name === 'PegIn' && x.type === 'event',
-      PErc20OnEosArtifact.abi
+      PERC20OnEosVaultArtifact.abi
     )
     const eventSignature = web3.eth.abi.encodeEventSignature(eventABI)
     const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
