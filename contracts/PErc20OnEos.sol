@@ -46,8 +46,8 @@ contract PErc20OnEos is Withdrawable, IERC777Recipient {
         return PNETWORK;
     }
 
-    function adminWitrawAllowed(address asset) internal override view returns(uint) {
-        return supportedTokens.contains(asset) ? 0 : super.adminWitrawAllowed(asset);
+    function adminWithdrawAllowed(address asset) internal override view returns(uint) {
+        return supportedTokens.contains(asset) ? 0 : super.adminWithdrawAllowed(asset);
     }
 
     function addSupportedToken(

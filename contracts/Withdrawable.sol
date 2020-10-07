@@ -4,7 +4,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "./AbstractOwnable.sol";
 
-abstract contract Withdrawable is AbstractOwnable{
+abstract contract Withdrawable is AbstractOwnable {
   using SafeERC20 for IERC20;
   address constant ETHER = address(0);
 
@@ -19,7 +19,7 @@ abstract contract Withdrawable is AbstractOwnable{
    * @param asset Asset to be withdrawn.
    */
   function adminWithdraw(address asset) public onlyOwner {
-    uint tokenBalance = adminWitrawAllowed(asset);
+    uint tokenBalance = adminWithdrawAllowed(asset);
     require(tokenBalance > 0, "admin witdraw not allowed");
     _withdraw(asset, tokenBalance);
   }
@@ -34,7 +34,7 @@ abstract contract Withdrawable is AbstractOwnable{
   }
 
   // can be overridden to disallow withdraw for some token
-  function adminWitrawAllowed(address asset) internal virtual view returns(uint allowedAmount) {
+  function adminWithdrawAllowed(address asset) internal virtual view returns(uint allowedAmount) {
     allowedAmount = asset == ETHER
       ? address(this).balance
       : IERC20(asset).balanceOf(address(this));
