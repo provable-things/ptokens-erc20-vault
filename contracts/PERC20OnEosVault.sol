@@ -46,6 +46,10 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
         weth = IWETH(_weth);
     }
 
+    function setPNetwork(address _pnetwork) external onlyPNetwork {
+        PNETWORK = _pnetwork;
+    }
+
     function IS_TOKEN_SUPPORTED(address _token) external view returns(bool) {
         return supportedTokens.contains(_token);
     }
