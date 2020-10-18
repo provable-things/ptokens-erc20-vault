@@ -112,10 +112,12 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
         address _tokenAddress = msg.sender;
         require(supportedTokens.contains(_tokenAddress), "caller is not a supported ERC777 token!");
         require(to == address(this), "Token receiver is not this contract");
-        require(amount > 0, "Token amount must be greater than zero!");
-        (bytes32 tag, string memory _destinationAddress) = abi.decode(userData, (bytes32, string));
-        require(tag == keccak256("ERC777-pegIn"), "Invalid tag for automatic pegIn on ERC777 send");
-        emit PegIn(_tokenAddress, from, amount, _destinationAddress);
+        if (userData.length > 0) {
+            require(amount > 0, "Token amount must be greater than zero!");
+            (bytes32 tag, string memory _destinationAddress) = abi.decode(userData, (bytes32, string));
+            require(tag == keccak256("ERC777-pegIn"), "Invalid tag for automatic pegIn on ERC777 send");
+            emit PegIn(_tokenAddress, from, amount, _destinationAddress);
+        }
     }
 
     function pegInEth(string calldata _destinationAddress)
