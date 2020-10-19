@@ -83,6 +83,13 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
         return supportedTokens.remove(_tokenAddress);
     }
 
+    function getSupportedTokens() external view returns(address[] memory res) {
+        res = new address[](supportedTokens.length());
+        for (uint256 i = 0; i < supportedTokens.length(); i++) {
+            res[i] = supportedTokens.at(i);
+        }
+    }
+
     function pegIn(
         uint256 _tokenAmount,
         address _tokenAddress,
