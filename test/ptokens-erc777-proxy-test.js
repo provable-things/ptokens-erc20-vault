@@ -5,7 +5,7 @@ const TOKEN_ARTIFACT = artifacts.require('ERC20_TOKEN')
 const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
 const WETH_ARTIFACT = artifacts.require('WETH')
 const PERC20OnEosVaultArtifact = artifacts.require('PERC20OnEosVault')
-const { expectRevert, expectEvent } = require('@openzeppelin/test-helpers')
+const { expectRevert } = require('@openzeppelin/test-helpers')
 
 const getContract = (_web3, _artifact, _constructorParams = []) =>
   new Promise((resolve, reject) =>
@@ -253,6 +253,31 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     assert.strictEqual(decoded._tokenSender, TOKEN_HOLDER_ADDRESS, '_tokenSender')
     assert.strictEqual(decoded._tokenAmount, TOKEN_AMOUNT.toString(), '_tokenAmount')
     assert.strictEqual(decoded._destinationAddress, DESTINATION_ADDRESS, '_destinationAddress')
+  })
+
+  it('Should pegIn an ERC777', async () => {
+    const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    await pErc20Methods.addSupportedToken(erc777.options.address).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+
+    await erc777.methods.approve(PERC20_ADDRESS, TOKEN_AMOUNT).send({ from: TOKEN_HOLDER_ADDRESS })
+    const tx = await pegIn(pErc20Methods, erc777.options.address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+  })
+
+  it('PNETWORK_ADDRESS can migrate with ERC777', async () => {
+    const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    await addTokenSupport(pErc20Methods, erc777.options.address, PNETWORK_ADDRESS)
+    await givePErc20Allowance(erc777.methods, TOKEN_HOLDER_ADDRESS, PERC20_ADDRESS, TOKEN_AMOUNT)
+    const migratedAddressTokenBalanceBefore = await erc777.methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    const pErc20TokenBalanceBeforePegIn = await erc777.methods.balanceOf(PERC20_ADDRESS).call()
+    const tx = await pegIn(pErc20Methods, erc777.options.address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+    const pErc20TokenBalanceAfterPegIn = await erc777.methods.balanceOf(PERC20_ADDRESS).call()
+    assert.strictEqual(parseInt(pErc20TokenBalanceAfterPegIn), parseInt(pErc20TokenBalanceBeforePegIn) + TOKEN_AMOUNT)
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
+    await pErc20Methods.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const migratedAddressTokenBalanceAfter = await erc777.methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
   })
 
   it('Should peg in weth', async () => {
