@@ -62,7 +62,7 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
   const TOKEN_AMOUNT = 1337
   const USER_DATA = '0x1337'
   const TOKEN_HOLDER_BALANCE = 1e6
-  const DESTINATION_ADDRESS = 'EOS_ADDRESS'
+  const DESTINATION_ADDRESS = 'aneosaddress'
   const NON_PNETWORK_ERR = 'Caller must be PNETWORK address!'
   const MIGRATION_DESTINATION_ADDRESS = getRandomEthAddress(web3)
   const INSUFFICIENT_BALANCE_ERR = 'ERC20: transfer amount exceeds balance'
