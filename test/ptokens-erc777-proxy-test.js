@@ -201,7 +201,11 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
-    const newContract = await getContract(web3, PERC20OnEosVaultArtifact, [weth.options.address, supportedTokenAddresses])
+    const newContract = await getContract(
+      web3,
+      PERC20OnEosVaultArtifact,
+      [weth.options.address, supportedTokenAddresses]
+    )
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )
@@ -218,7 +222,9 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     const pErc20TokenBalanceAfterPegIn = await tokenMethods.balanceOf(PERC20_ADDRESS).call()
     assert.strictEqual(parseInt(pErc20TokenBalanceAfterPegIn), parseInt(pErc20TokenBalanceBeforePegIn) + TOKEN_AMOUNT)
     assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
-    await pErc20Methods.migrateSingle(MIGRATION_DESTINATION_ADDRESS, TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    await pErc20Methods
+      .migrateSingle(MIGRATION_DESTINATION_ADDRESS, TOKEN_ADDRESS)
+      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
     const migratedAddressTokenBalanceAfter = await tokenMethods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
     assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
   })
@@ -260,7 +266,13 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     await pErc20Methods.addSupportedToken(erc777.options.address).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
 
     await erc777.methods.approve(PERC20_ADDRESS, TOKEN_AMOUNT).send({ from: TOKEN_HOLDER_ADDRESS })
-    const tx = await pegIn(pErc20Methods, erc777.options.address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    const tx = await pegIn(
+      pErc20Methods,
+      erc777.options.address,
+      TOKEN_AMOUNT,
+      TOKEN_HOLDER_ADDRESS,
+      DESTINATION_ADDRESS
+    )
     assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
   })
 
@@ -270,7 +282,13 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     await givePErc20Allowance(erc777.methods, TOKEN_HOLDER_ADDRESS, PERC20_ADDRESS, TOKEN_AMOUNT)
     const migratedAddressTokenBalanceBefore = await erc777.methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
     const pErc20TokenBalanceBeforePegIn = await erc777.methods.balanceOf(PERC20_ADDRESS).call()
-    const tx = await pegIn(pErc20Methods, erc777.options.address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    const tx = await pegIn(
+      pErc20Methods,
+      erc777.options.address,
+      TOKEN_AMOUNT,
+      TOKEN_HOLDER_ADDRESS,
+      DESTINATION_ADDRESS
+    )
     assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
     const pErc20TokenBalanceAfterPegIn = await erc777.methods.balanceOf(PERC20_ADDRESS).call()
     assert.strictEqual(parseInt(pErc20TokenBalanceAfterPegIn), parseInt(pErc20TokenBalanceBeforePegIn) + TOKEN_AMOUNT)
@@ -282,9 +300,9 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
 
   it('Should peg in weth', async () => {
     await addTokenSupport(pErc20Methods, weth.options.address, PNETWORK_ADDRESS)
-
-    const tx = await pErc20Methods.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
-
+    const tx = await pErc20Methods
+      .pegInEth(DESTINATION_ADDRESS)
+      .send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
     assertPegInEvent(tx.events.PegIn, weth.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
     assert.strictEqual(await weth.methods.balanceOf(PERC20_ADDRESS).call(), TOKEN_AMOUNT.toString())
     assert.strictEqual(await web3.eth.getBalance(PERC20_ADDRESS), '0', 'eth balance must be 0')
@@ -294,9 +312,9 @@ contract('PERC20', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRES
     await addTokenSupport(pErc20Methods, weth.options.address, PNETWORK_ADDRESS)
     await pErc20Methods.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
     const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
-
-    await pErc20Methods.pegOut(TOKEN_HOLDER_ADDRESS, weth.options.address, TOKEN_AMOUNT).send({ from: PNETWORK_ADDRESS })
-
+    await pErc20Methods
+      .pegOut(TOKEN_HOLDER_ADDRESS, weth.options.address, TOKEN_AMOUNT)
+      .send({ from: PNETWORK_ADDRESS })
     assert.strictEqual(await weth.methods.balanceOf(PERC20_ADDRESS).call(), '0')
     assert.strictEqual(await web3.eth.getBalance(PERC20_ADDRESS), '0', 'eth balance must be 0')
     const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
