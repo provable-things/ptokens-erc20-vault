@@ -58,6 +58,16 @@ const pegInWithUserData = (
   _vaultMethods['pegIn(uint256,address,string,bytes)'](_tokenAmount, _tokenAddress, _destinationAddress, _userData)
     .send({ from: _tokenHolder, gas: _gasLimit })
 
+const maybeStripHexPrefix = _s => _s.toLowerCase().startsWith('0x') ? _s.slice(2) : _s
+
+const convertHexToBytes = _hex => {
+  let hex = maybeStripHexPrefix(_hex)
+  let bytes
+  for (bytes = [], c = 0; c < hex.length; c += 2)
+    bytes.push(parseInt(hex.substr(c, 2), 16))
+  return bytes
+}
+
 contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRESS, ...ACCOUNTS]) => {
   const TOKEN_AMOUNT = 1337
   const USER_DATA = '0x1337'
@@ -383,5 +393,38 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     )
     assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), TOKEN_AMOUNT.toString())
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+  })
+
+  it('Can peg out with user data', async () => {
+    const userDataHex = 'decaff'
+    const userDataBytes = convertHexToBytes(userDataHex)
+    const ERC777_TOKEN_CONTRACT = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    const ERC777_TOKEN_ADDRESS = ERC777_TOKEN_CONTRACT.options.address
+    const ERC777_TOKEN_METHODS = prop('methods', ERC777_TOKEN_CONTRACT)
+    await VAULT_METHODS.addSupportedToken(ERC777_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    await giveVaultAllowance(ERC777_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await addTokenSupport(VAULT_METHODS, ERC777_TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await pegIn(VAULT_METHODS, ERC777_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    const tokenHolderBalanceBeforePegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    await VAULT_METHODS['pegOut(address,address,uint256,bytes)'](
+      TOKEN_HOLDER_ADDRESS,
+      ERC777_TOKEN_ADDRESS,
+      TOKEN_AMOUNT,
+      userDataBytes
+    ).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const tokenHolderBalanceAfterPegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
+    const TOKENS_RECEIVED_EVENT_TOPIC = '0x06b541ddaa720db2b10a4d0cdac39b8d360425fc073085fac19bc82614677987'
+    const tokensReceivedLogs = await web3.eth.getPastLogs({
+      address: ERC777_TOKEN_ADDRESS,
+      topics: [ TOKENS_RECEIVED_EVENT_TOPIC ]
+    })
+    assert.strictEqual(tokensReceivedLogs.length, 1)
+    const [ tokensReceivedLog ] = tokensReceivedLogs
+    const ethWordSizeInHexChars = 64
+    const startIndexOfUseData = ethWordSizeInHexChars * 4
+    const userDataFromLog = maybeStripHexPrefix(tokensReceivedLog.data)
+      .slice(startIndexOfUseData, startIndexOfUseData + maybeStripHexPrefix(userDataHex).length)
+    assert.strictEqual(userDataHex, userDataFromLog)
   })
 })
