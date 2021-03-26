@@ -19,7 +19,13 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
     address public PNETWORK;
     IWETH public weth;
 
-    event PegIn(address _tokenAddress, address _tokenSender, uint256 _tokenAmount, string _destinationAddress);
+    event PegIn(
+        address _tokenAddress,
+        address _tokenSender,
+        uint256 _tokenAmount,
+        string _destinationAddress,
+        bytes _userData
+    );
 
     constructor(
         address _weth,
@@ -98,10 +104,22 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
         external
         returns (bool)
     {
+        return pegIn(_tokenAmount, _tokenAddress, _destinationAddress, "");
+    }
+
+    function pegIn(
+        uint256 _tokenAmount,
+        address _tokenAddress,
+        string memory _destinationAddress,
+        bytes memory _userData
+    )
+        public
+        returns (bool)
+    {
         require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
-        emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress);
+        emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress, _userData);
         return true;
     }
 
@@ -123,7 +141,7 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
             require(amount > 0, "Token amount must be greater than zero!");
             (bytes32 tag, string memory _destinationAddress) = abi.decode(userData, (bytes32, string));
             require(tag == keccak256("ERC777-pegIn"), "Invalid tag for automatic pegIn on ERC777 send");
-            emit PegIn(_tokenAddress, from, amount, _destinationAddress);
+            emit PegIn(_tokenAddress, from, amount, _destinationAddress, userData);
         }
     }
 
@@ -132,10 +150,21 @@ contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
         payable
         returns (bool)
     {
+        return pegInEth(_destinationAddress, "");
+    }
+
+    function pegInEth(
+        string memory _destinationAddress,
+        bytes memory _userData
+    )
+        public
+        payable
+        returns (bool)
+    {
         require(supportedTokens.contains(address(weth)), "WETH is NOT supported!");
         require(msg.value > 0, "Ethers amount must be greater than zero!");
         weth.deposit.value(msg.value)();
-        emit PegIn(address(weth), msg.sender, msg.value, _destinationAddress);
+        emit PegIn(address(weth), msg.sender, msg.value, _destinationAddress, _userData);
         return true;
     }
 
