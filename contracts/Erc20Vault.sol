@@ -1,5 +1,6 @@
 pragma solidity ^0.6.0;
 
+import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/EnumerableSet.sol";
@@ -173,7 +174,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         address _tokenAddress,
         uint256 _tokenAmount
     )
-        external
+        public
         onlyPNetwork
         returns (bool)
     {
@@ -184,6 +185,25 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
             IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         }
         return true;
+    }
+
+    function pegOut(
+        address payable _tokenRecipient,
+        address _tokenAddress,
+        uint256 _tokenAmount,
+        bytes calldata _userData
+    )
+        external
+        onlyPNetwork
+        returns (bool)
+    {
+        address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, TOKENS_RECIPIENT_INTERFACE_HASH);
+        if (erc777Address == address(0)) {
+            return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
+        } else {
+            IERC777(erc777Address).send(_tokenRecipient, _tokenAmount, _userData);
+            return true;
+        }
     }
 
     function migrate(
