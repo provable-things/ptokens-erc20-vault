@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "./IWETH.sol";
 import "./Withdrawable.sol";
 
-contract PERC20OnEosVault is Withdrawable, IERC777Recipient {
+contract Erc20Vault is Withdrawable, IERC777Recipient {
     using SafeERC20 for IERC20;
     using EnumerableSet for EnumerableSet.AddressSet;
 
