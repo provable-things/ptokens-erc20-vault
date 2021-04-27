@@ -60,14 +60,6 @@ const pegInWithUserData = (
 
 const maybeStripHexPrefix = _s => _s.toLowerCase().startsWith('0x') ? _s.slice(2) : _s
 
-const convertHexToBytes = _hex => {
-  let hex = maybeStripHexPrefix(_hex)
-  let bytes
-  for (bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16))
-  return bytes
-}
-
 contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRESS, ...ACCOUNTS]) => {
   const TOKEN_AMOUNT = 1337
   const USER_DATA = '0x1337'
@@ -396,8 +388,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   })
 
   it('Can peg out with user data', async () => {
-    const userDataHex = 'decaff'
-    const userDataBytes = convertHexToBytes(userDataHex)
+    const userData = '0xdecaff'
     const ERC777_TOKEN_CONTRACT = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
     const ERC777_TOKEN_ADDRESS = ERC777_TOKEN_CONTRACT.options.address
     const ERC777_TOKEN_METHODS = prop('methods', ERC777_TOKEN_CONTRACT)
@@ -410,7 +401,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       TOKEN_HOLDER_ADDRESS,
       ERC777_TOKEN_ADDRESS,
       TOKEN_AMOUNT,
-      userDataBytes
+      userData,
     ).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
     const tokenHolderBalanceAfterPegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
@@ -422,9 +413,9 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(tokensReceivedLogs.length, 1)
     const [ tokensReceivedLog ] = tokensReceivedLogs
     const ethWordSizeInHexChars = 64
-    const startIndexOfUseData = ethWordSizeInHexChars * 4
-    const userDataFromLog = maybeStripHexPrefix(tokensReceivedLog.data)
-      .slice(startIndexOfUseData, startIndexOfUseData + maybeStripHexPrefix(userDataHex).length)
-    assert.strictEqual(userDataHex, userDataFromLog)
+    const startIndexOfUserData = ethWordSizeInHexChars * 4
+    const userDataFromLog = `0x${maybeStripHexPrefix(tokensReceivedLog.data)
+      .slice(startIndexOfUserData, startIndexOfUserData + maybeStripHexPrefix(userData).length)}`
+    assert.strictEqual(userData, userDataFromLog)
   })
 })
