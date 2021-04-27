@@ -418,4 +418,36 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       .slice(startIndexOfUserData, startIndexOfUserData + maybeStripHexPrefix(userData).length)}`
     assert.strictEqual(userData, userDataFromLog)
   })
+
+  it('Should migrate all token balances', async () => {
+    const NUM_TOKEN_CONTRACTS = 5
+    const contracts = await Promise.all(
+      new Array(NUM_TOKEN_CONTRACTS).fill().map(_ => getContract(web3, ERC20_ARTIFACT))
+    )
+    const tokens = contracts.map(_contract => ({
+      methods: prop('methods', _contract),
+      address: prop('_address', _contract),
+    }))
+    await Promise.all(tokens.map(({ methods, address }) =>
+      methods
+        .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
+        .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+        .then(_ => addTokenSupport(VAULT_METHODS, address, PNETWORK_ADDRESS))
+        .then(_ => giveVaultAllowance(methods, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT))
+        .then(_ => pegIn(VAULT_METHODS, address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS))
+    ))
+    const tokenBalancesAfterPegin = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(VAULT_ADDRESS).call()
+    ))
+    tokenBalancesAfterPegin.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
+    await VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const migratedTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    ))
+    migratedTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
+    const vaultTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(VAULT_ADDRESS).call()
+    ))
+    vaultTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), 0))
+  })
 })
