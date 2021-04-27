@@ -213,8 +213,9 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         external
         onlyPNetwork
     {
-        for (uint256 i = 0; i < supportedTokens.length(); i++) {
-            address tokenAddress = supportedTokens.at(i);
+        uint256 numberOfTokens = supportedTokens.length();
+        for (uint256 i = 0; i < numberOfTokens; i++) {
+            address tokenAddress = supportedTokens.at(0);
             _migrateSingle(_to, tokenAddress);
         }
     }
