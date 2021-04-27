@@ -60,14 +60,6 @@ const pegInWithUserData = (
 
 const maybeStripHexPrefix = _s => _s.toLowerCase().startsWith('0x') ? _s.slice(2) : _s
 
-const convertHexToBytes = _hex => {
-  let hex = maybeStripHexPrefix(_hex)
-  let bytes
-  for (bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16))
-  return bytes
-}
-
 contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRESS, ...ACCOUNTS]) => {
   const TOKEN_AMOUNT = 1337
   const USER_DATA = '0x1337'
@@ -396,8 +388,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   })
 
   it('Can peg out with user data', async () => {
-    const userDataHex = 'decaff'
-    const userDataBytes = convertHexToBytes(userDataHex)
+    const userData = '0xdecaff'
     const ERC777_TOKEN_CONTRACT = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
     const ERC777_TOKEN_ADDRESS = ERC777_TOKEN_CONTRACT.options.address
     const ERC777_TOKEN_METHODS = prop('methods', ERC777_TOKEN_CONTRACT)
@@ -410,7 +401,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       TOKEN_HOLDER_ADDRESS,
       ERC777_TOKEN_ADDRESS,
       TOKEN_AMOUNT,
-      userDataBytes
+      userData,
     ).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
     const tokenHolderBalanceAfterPegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
@@ -422,9 +413,41 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(tokensReceivedLogs.length, 1)
     const [ tokensReceivedLog ] = tokensReceivedLogs
     const ethWordSizeInHexChars = 64
-    const startIndexOfUseData = ethWordSizeInHexChars * 4
-    const userDataFromLog = maybeStripHexPrefix(tokensReceivedLog.data)
-      .slice(startIndexOfUseData, startIndexOfUseData + maybeStripHexPrefix(userDataHex).length)
-    assert.strictEqual(userDataHex, userDataFromLog)
+    const startIndexOfUserData = ethWordSizeInHexChars * 4
+    const userDataFromLog = `0x${maybeStripHexPrefix(tokensReceivedLog.data)
+      .slice(startIndexOfUserData, startIndexOfUserData + maybeStripHexPrefix(userData).length)}`
+    assert.strictEqual(userData, userDataFromLog)
+  })
+
+  it('Should migrate all token balances', async () => {
+    const NUM_TOKEN_CONTRACTS = 5
+    const contracts = await Promise.all(
+      new Array(NUM_TOKEN_CONTRACTS).fill().map(_ => getContract(web3, ERC20_ARTIFACT))
+    )
+    const tokens = contracts.map(_contract => ({
+      methods: prop('methods', _contract),
+      address: prop('_address', _contract),
+    }))
+    await Promise.all(tokens.map(({ methods, address }) =>
+      methods
+        .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
+        .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+        .then(_ => addTokenSupport(VAULT_METHODS, address, PNETWORK_ADDRESS))
+        .then(_ => giveVaultAllowance(methods, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT))
+        .then(_ => pegIn(VAULT_METHODS, address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS))
+    ))
+    const tokenBalancesAfterPegin = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(VAULT_ADDRESS).call()
+    ))
+    tokenBalancesAfterPegin.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
+    await VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const migratedTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
+    ))
+    migratedTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
+    const vaultTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
+      methods.balanceOf(VAULT_ADDRESS).call()
+    ))
+    vaultTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), 0))
   })
 })
