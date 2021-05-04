@@ -331,7 +331,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
   })
 
-  it('Should peg out WETH_CONTRACT', async () => {
+  it.only('Should peg out wETH', async () => {
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
     const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
