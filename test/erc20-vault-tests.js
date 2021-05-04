@@ -469,4 +469,53 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
     assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
   })
+
+  it('Should be able to peg out wETH with user data to a smart-contract', async () => {
+    const userData = '0xdecaff'
+    const PEG_OUT_GAS_LIMIT = 450e3
+    const expensiveFallbackContract = await getContract(web3, CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT)
+    const expensiveFallbackContractAddress = expensiveFallbackContract._address
+    await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+    const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+    assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
+    await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    await VAULT_METHODS['pegOut(address,address,uint256,bytes)'](
+      expensiveFallbackContractAddress,
+      WETH_ADDRESS,
+      TOKEN_AMOUNT,
+      userData,
+    )
+      .send({ from: PNETWORK_ADDRESS, gas: PEG_OUT_GAS_LIMIT })
+    assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+    const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+    assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
+    const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+    assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
+    const fallbackContractEvents = await expensiveFallbackContract.getPastEvents('allEvents')
+    assert.strictEqual(fallbackContractEvents.length, 1)
+    const fallbackEventData = fallbackContractEvents[0].raw.data
+    const WORD_SIZE_IN_HEX_CHARS = 64
+    const HEX_PREFIX_LENGTH = 2
+    const amountFromEvent = parseInt(
+      `0x${fallbackEventData.slice(HEX_PREFIX_LENGTH, WORD_SIZE_IN_HEX_CHARS + HEX_PREFIX_LENGTH)}`,
+    )
+    assert.strictEqual(amountFromEvent, TOKEN_AMOUNT)
+    const dataFromEevent = fallbackEventData
+      .slice(-WORD_SIZE_IN_HEX_CHARS).slice(0, userData.length - HEX_PREFIX_LENGTH)
+    assert.strictEqual(`0x${dataFromEevent}`, userData)
+  })
+
+  it('Should not fail to peg out wETH with user data to an EOA', async () => {
+    await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+    const userData = '0xdecaff'
+    await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+    await VAULT_METHODS
+      .pegOut(TOKEN_HOLDER_ADDRESS, WETH_ADDRESS, TOKEN_AMOUNT, userData)
+      .send({ from: PNETWORK_ADDRESS })
+    assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+    assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+    const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+    assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+  })
 })
