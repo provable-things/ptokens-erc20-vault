@@ -170,6 +170,22 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         return true;
     }
 
+    function pegOutWeth(
+        address payable _tokenRecipient,
+        uint256 _tokenAmount,
+        bytes memory _userData
+    )
+        internal
+        returns (bool)
+    {
+        weth.withdraw(_tokenAmount);
+        // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
+        // on the provided 2300 gas stipend and instead forwards all available gas onwards.
+        // SOURCE: https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now
+        (bool success, ) = _tokenRecipient.call.value(_tokenAmount)(_userData);
+        require(success, "ETH transfer failed when pegging out wETH!");
+    }
+
     function pegOut(
         address payable _tokenRecipient,
         address _tokenAddress,
@@ -180,12 +196,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         returns (bool)
     {
         if (_tokenAddress == address(weth)) {
-            weth.withdraw(_tokenAmount);
-            // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
-            // on the provided 2300 gas stipend and instead forwards all available gas onwards.
-            // SOURCE: https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now
-            (bool success, ) = _tokenRecipient.call.value(_tokenAmount)("");
-            require(success, "ETH transfer failed when pegging out wETH!");
+            pegOutWeth(_tokenRecipient, _tokenAmount, "");
         } else {
             IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         }
@@ -202,12 +213,16 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         onlyPNetwork
         returns (bool)
     {
-        address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, ERC777_TOKEN_INTERFACE_HASH);
-        if (erc777Address == address(0)) {
-            return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
+        if (_tokenAddress == address(weth)) {
+            pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
         } else {
-            IERC777(erc777Address).send(_tokenRecipient, _tokenAmount, _userData);
-            return true;
+            address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, ERC777_TOKEN_INTERFACE_HASH);
+            if (erc777Address == address(0)) {
+                return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
+            } else {
+                IERC777(erc777Address).send(_tokenRecipient, _tokenAmount, _userData);
+                return true;
+            }
         }
     }
 
