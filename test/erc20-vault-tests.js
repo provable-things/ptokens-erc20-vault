@@ -6,6 +6,7 @@ const ERC20_ARTIFACT = artifacts.require('ERC20_TOKEN')
 const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
 const VaultArtifact = artifacts.require('Erc20Vault')
 const { expectRevert } = require('@openzeppelin/test-helpers')
+const CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT = artifacts.require('CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN')
 
 const GAS_LIMIT = 3e6
 
@@ -331,7 +332,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
   })
 
-  it('Should peg out WETH_CONTRACT', async () => {
+  it('Should peg out wETH', async () => {
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
     const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
@@ -449,5 +450,23 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       methods.balanceOf(VAULT_ADDRESS).call()
     ))
     vaultTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), 0))
+  })
+
+  it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
+    const PEG_OUT_GAS_LIMIT = 450e3
+    const expensiveFallbackContract = await getContract(web3, CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT)
+    const expensiveFallbackContractAddress = expensiveFallbackContract._address
+    await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+    const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+    assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
+    await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    await VAULT_METHODS
+      .pegOut(expensiveFallbackContractAddress, WETH_ADDRESS, TOKEN_AMOUNT)
+      .send({ from: PNETWORK_ADDRESS, gas: PEG_OUT_GAS_LIMIT })
+    assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+    const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+    assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
+    const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+    assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
   })
 })
