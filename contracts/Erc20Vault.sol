@@ -245,7 +245,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     {
         for (uint256 i = 0; i < supportedTokens.length(); i++) {
             address tokenAddress = supportedTokens.at(i);
-            require(IERC20(tokenAddress).balanceOf(address(this)) == 0, "Balance of supported tokens must be 0");
+            require(getContractBalanceOf(tokenAddress) == 0, "Balance of supported tokens must be 0");
         }
         selfdestruct(msg.sender);
     }
@@ -267,9 +267,17 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         private
     {
         if (supportedTokens.contains(_tokenAddress)) {
-            uint balance = IERC20(_tokenAddress).balanceOf(address(this));
-            IERC20(_tokenAddress).safeTransfer(_to, balance);
+            IERC20(_tokenAddress).safeTransfer(_to, getContractBalanceOf(_tokenAddress));
             supportedTokens.remove(_tokenAddress);
         }
+    }
+
+    function getContractBalanceOf(
+        address _tokenAddress
+    )
+        internal
+        returns (uint256)
+    {
+        return IERC20(_tokenAddress).balanceOf(address(this));
     }
 }
