@@ -197,6 +197,19 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         require(success, "ETH transfer failed when pegging out wETH!");
     }
 
+    function pegOutSafeMoon(
+        address _tokenRecipient,
+        uint256 _tokenAmount
+    )
+        internal
+        returns (bool)
+    {
+        // NOTE: SafeMoon does NOT implement `ERC777Token` or `ERC777TokensRecipient`, & so no metadata can be passed.
+        IERC20(SAFEMOON_ADDRESS).safeTransfer(_tokenRecipient, _tokenAmount);
+        setLastSeenSafeMoonBalance(getSafeMoonTokenBalance());
+        return true;
+    }
+
     function pegOut(
         address payable _tokenRecipient,
         address _tokenAddress,
@@ -208,11 +221,14 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     {
         if (_tokenAddress == address(weth)) {
             pegOutWeth(_tokenRecipient, _tokenAmount, "");
+        } else if (_tokenAddress == SAFEMOON_ADDRESS) {
+            pegOutSafeMoon(_tokenRecipient, _tokenAmount);
         } else {
             IERC20(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         }
         return true;
     }
+
 
     function pegOut(
         address payable _tokenRecipient,
@@ -226,6 +242,8 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     {
         if (_tokenAddress == address(weth)) {
             pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
+        } else if (_tokenAddress == SAFEMOON_ADDRESS) {
+            pegOutSafeMoon(_tokenRecipient, _tokenAmount);
         } else {
             address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, ERC777_TOKEN_INTERFACE_HASH);
             if (erc777Address == address(0)) {

@@ -632,4 +632,26 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       'Cannot peg in SafeMoon here - use `pegInSafeMoon` instead!'
     )
   })
+
+  it('Should decrement last seen SafeMoon balance when pegging out SafeMoon', async () => {
+    await SAFEMOON_METHODS
+      .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
+      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    assert.strictEqual(parseInt(await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()), TOKEN_HOLDER_BALANCE)
+    await addTokenSupport(VAULT_METHODS, SAFEMOON_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(SAFEMOON_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await VAULT_METHODS
+      .pegInSafeMoon(TOKEN_AMOUNT, DESTINATION_ADDRESS)
+      .send({ from: TOKEN_HOLDER_ADDRESS, gas: GAS_LIMIT })
+    const lastSeenSafeMoonBalanceBeforePegOut = await VAULT_METHODS.LAST_SEEN_SAFEMOON_BALANCE().call()
+    assert.strictEqual(parseInt(lastSeenSafeMoonBalanceBeforePegOut), TOKEN_AMOUNT)
+    await VAULT_METHODS
+      .pegOut(TOKEN_HOLDER_ADDRESS, SAFEMOON_ADDRESS, TOKEN_AMOUNT)
+      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const lastSeenSafeMoonBalanceAfterPegOut = await VAULT_METHODS.LAST_SEEN_SAFEMOON_BALANCE().call()
+    assert.strictEqual(
+      parseInt(lastSeenSafeMoonBalanceAfterPegOut),
+      parseInt(lastSeenSafeMoonBalanceBeforePegOut - TOKEN_AMOUNT)
+    )
+  })
 })
