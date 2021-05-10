@@ -284,9 +284,18 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     function getContractBalanceOf(
         address _tokenAddress
     )
+        view
         internal
         returns (uint256)
     {
         return IERC20(_tokenAddress).balanceOf(address(this));
+    }
+
+    function getSafeMoonTokenBalance()
+        view
+        public
+        returns(uint256)
+    {
+        return getContractBalanceOf(SAFEMOON_ADDRESS);
     }
 }

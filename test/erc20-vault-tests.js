@@ -538,4 +538,13 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       NON_PNETWORK_ERR,
     )
   })
+
+  it.only('Should get safemoon token balance', async () => {
+    await SAFEMOON_METHODS
+      .transfer(VAULT_ADDRESS, TOKEN_AMOUNT)
+      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    assert.strictEqual(parseInt(await SAFEMOON_METHODS.balanceOf(VAULT_ADDRESS).call()), TOKEN_AMOUNT)
+    const result = await VAULT_METHODS.getSafeMoonTokenBalance().call()
+    assert.strictEqual(parseInt(result), TOKEN_AMOUNT)
+  })
 })
