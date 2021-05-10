@@ -20,6 +20,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     EnumerableSet.AddressSet private supportedTokens;
     address public PNETWORK;
     IWETH public weth;
+    address public SAFEMOON_ADDRESS;
 
     event PegIn(
         address _tokenAddress,
@@ -31,7 +32,8 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
 
     constructor(
         address _weth,
-        address [] memory _tokensToSupport
+        address [] memory _tokensToSupport,
+        address _safemoonAddress
     ) public {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {
@@ -39,6 +41,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         }
         weth = IWETH(_weth);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
+        SAFEMOON_ADDRESS = _safemoonAddress;
     }
 
     modifier onlyPNetwork() {
@@ -52,6 +55,10 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
 
     function setWeth(address _weth) external onlyPNetwork {
         weth = IWETH(_weth);
+    }
+
+    function setSafemoon(address _safemoonAddress) external onlyPNetwork { // TODO test!
+        SAFEMOON_ADDRESS = _safemoonAddress;
     }
 
     function setPNetwork(address _pnetwork) external onlyPNetwork {

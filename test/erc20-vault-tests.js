@@ -77,7 +77,10 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
     WETH_CONTRACT = await getContract(web3, WETH_ARTIFACT)
     WETH_ADDRESS = WETH_CONTRACT.options.address
-    const VAULT_CONTRACT = await getContract(web3, VaultArtifact, [WETH_ADDRESS, []])
+    const SAFEMOON_CONTRACT = await getContract(web3, ERC20_ARTIFACT)
+    SAFEMOON_METHODS = prop('methods', SAFEMOON_CONTRACT)
+    SAFEMOON_ADDRESS = prop('_address', SAFEMOON_CONTRACT)
+    const VAULT_CONTRACT = await getContract(web3, VaultArtifact, [WETH_ADDRESS, [], SAFEMOON_ADDRESS])
     VAULT_METHODS = prop('methods', VAULT_CONTRACT)
     VAULT_ADDRESS = prop('_address', VAULT_CONTRACT)
     const ERC20_TOKEN_CONTRACT = await getContract(web3, ERC20_ARTIFACT)
@@ -228,7 +231,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     const newContract = await getContract(
       web3,
       VaultArtifact,
-      [WETH_ADDRESS, supportedTokenAddresses]
+      [WETH_ADDRESS, supportedTokenAddresses, SAFEMOON_ADDRESS]
     )
     const tokensAreSupportedBools = await Promise.all(
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
@@ -517,5 +520,22 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
     const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
     assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+  })
+
+  it('`PNETWORK_ADDRESS` can set safemoon address', async () => {
+    const safemoonBefore = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
+    const newAddress = getRandomEthAddress(web3)
+    await VAULT_METHODS.setSafemoon(newAddress).send({ from: PNETWORK_ADDRESS })
+    const safemoonAfter = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
+    assert.notStrictEqual(safemoonBefore, safemoonAfter, 'Safemoon address did not change!')
+    assert.strictEqual(safemoonAfter.toLowerCase(), newAddress.toLowerCase(), 'Safemoon is NOT the expected address!')
+  })
+
+  it('`NON_PNETWORK_ADDRESS` cannot set safemoon address', async () => {
+    const newAddress = getRandomEthAddress(web3)
+    await expectRevert(
+      VAULT_METHODS.setSafemoon(newAddress).send({ from: NON_PNETWORK_ADDRESS }),
+      NON_PNETWORK_ERR,
+    )
   })
 })
