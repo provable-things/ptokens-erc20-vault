@@ -23,6 +23,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     address public PNETWORK;
     IWETH public weth;
     address public SAFEMOON_ADDRESS;
+    uint256 public LAST_SEEN_SAFEMOON_BALANCE;
 
     event PegIn(
         address _tokenAddress,
@@ -297,5 +298,13 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         returns(uint256)
     {
         return getContractBalanceOf(SAFEMOON_ADDRESS);
+    }
+
+    function setLastSeenSafemoonBalance(
+        uint256 _newLastSeenSafemoonBalance
+    )
+        internal
+    {
+        LAST_SEEN_SAFEMOON_BALANCE = _newLastSeenSafemoonBalance;
     }
 }
