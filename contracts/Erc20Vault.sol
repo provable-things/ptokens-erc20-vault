@@ -36,7 +36,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     constructor(
         address _weth,
         address [] memory _tokensToSupport,
-        address _safemoonAddress
+        address _safeMoonAddress
     ) public {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {
@@ -44,7 +44,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         }
         weth = IWETH(_weth);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
-        SAFEMOON_ADDRESS = _safemoonAddress;
+        SAFEMOON_ADDRESS = _safeMoonAddress;
     }
 
     modifier onlyPNetwork() {
@@ -60,8 +60,8 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         weth = IWETH(_weth);
     }
 
-    function setSafemoon(address _safemoonAddress) external onlyPNetwork { // TODO test!
-        SAFEMOON_ADDRESS = _safemoonAddress;
+    function setSafeMoon(address _safeMoonAddress) external onlyPNetwork {
+        SAFEMOON_ADDRESS = _safeMoonAddress;
     }
 
     function setPNetwork(address _pnetwork) external onlyPNetwork {
@@ -128,7 +128,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         public
         returns (bool)
     {
-        require(_tokenAddress != SAFEMOON_ADDRESS, "Cannot peg in Safemoon here - use `pegInSafemoon` instead!");
+        require(_tokenAddress != SAFEMOON_ADDRESS, "Cannot peg in SafeMoon here - use `pegInSafeMoon` instead!");
         require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
@@ -301,15 +301,15 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         return getContractBalanceOf(SAFEMOON_ADDRESS);
     }
 
-    function setLastSeenSafemoonBalance(
-        uint256 _newLastSeenSafemoonBalance
+    function setLastSeenSafeMoonBalance(
+        uint256 _newLastSeenSafeMoonBalance
     )
         internal
     {
-        LAST_SEEN_SAFEMOON_BALANCE = _newLastSeenSafemoonBalance;
+        LAST_SEEN_SAFEMOON_BALANCE = _newLastSeenSafeMoonBalance;
     }
 
-    function getSafemoonMetadata(
+    function getSafeMoonMetadata(
         uint256 _tokenAmount,
         bytes memory _userData
     )
@@ -320,7 +320,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         return abi.encode(LAST_SEEN_SAFEMOON_BALANCE, LAST_SEEN_SAFEMOON_BALANCE.add(_tokenAmount), _userData);
     }
 
-    function incrementLastSeenSafemoonBalance(
+    function incrementLastSeenSafeMoonBalance(
         uint256 _incrementAmount
     )
         internal
@@ -328,17 +328,17 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         LAST_SEEN_SAFEMOON_BALANCE = LAST_SEEN_SAFEMOON_BALANCE.add(_incrementAmount);
     }
 
-    function pegInSafemoon(
+    function pegInSafeMoon(
         uint256 _tokenAmount,
         string calldata _destinationAddress
     )
         external
         returns (bool)
     {
-        return pegInSafemoon(_tokenAmount, _destinationAddress, "");
+        return pegInSafeMoon(_tokenAmount, _destinationAddress, "");
     }
 
-    function pegInSafemoon(
+    function pegInSafeMoon(
         uint256 _tokenAmount,
         string memory _destinationAddress,
         bytes memory _userData
@@ -354,9 +354,9 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
             msg.sender,
             _tokenAmount,
             _destinationAddress,
-            getSafemoonMetadata(_tokenAmount, _userData)
+            getSafeMoonMetadata(_tokenAmount, _userData)
         );
-        incrementLastSeenSafemoonBalance(_tokenAmount);
+        incrementLastSeenSafeMoonBalance(_tokenAmount);
         return true;
     }
 }

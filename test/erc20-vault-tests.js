@@ -522,19 +522,19 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
   })
 
-  it('`PNETWORK_ADDRESS` can set safemoon address', async () => {
-    const safemoonBefore = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
+  it('`PNETWORK_ADDRESS` can set SafeMoon address', async () => {
+    const safeMoonBefore = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
     const newAddress = getRandomEthAddress(web3)
-    await VAULT_METHODS.setSafemoon(newAddress).send({ from: PNETWORK_ADDRESS })
-    const safemoonAfter = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
-    assert.notStrictEqual(safemoonBefore, safemoonAfter, 'Safemoon address did not change!')
-    assert.strictEqual(safemoonAfter.toLowerCase(), newAddress.toLowerCase(), 'Safemoon is NOT the expected address!')
+    await VAULT_METHODS.setSafeMoon(newAddress).send({ from: PNETWORK_ADDRESS })
+    const safeMoonAfter = await VAULT_METHODS.SAFEMOON_ADDRESS().call()
+    assert.notStrictEqual(safeMoonBefore, safeMoonAfter, 'SafeMoon address did not change!')
+    assert.strictEqual(safeMoonAfter.toLowerCase(), newAddress.toLowerCase(), 'SafeMoon is NOT the expected address!')
   })
 
-  it('`NON_PNETWORK_ADDRESS` cannot set safemoon address', async () => {
+  it('`NON_PNETWORK_ADDRESS` cannot set SafeMoon address', async () => {
     const newAddress = getRandomEthAddress(web3)
     await expectRevert(
-      VAULT_METHODS.setSafemoon(newAddress).send({ from: NON_PNETWORK_ADDRESS }),
+      VAULT_METHODS.setSafeMoon(newAddress).send({ from: NON_PNETWORK_ADDRESS }),
       NON_PNETWORK_ERR,
     )
   })
@@ -548,16 +548,16 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(result), TOKEN_AMOUNT)
   })
 
-  it('Should get safemoon metadata', async () => {
+  it('Should get SafeMoon metadata', async () => {
     const userData = '0xdecaff'
     const tokenAmount = 1337
-    const result = await VAULT_METHODS.getSafemoonMetadata(userData, tokenAmount).call()
+    const result = await VAULT_METHODS.getSafeMoonMetadata(userData, tokenAmount).call()
     /* eslint-disable-next-line max-len */
     const expectedResult = '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000decaff000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000020539000000000000000000000000000000000000000000000000000000000000'
     assert.strictEqual(result, expectedResult)
   })
 
-  it.only('Should peg in safemoon without userdata', async () => {
+  it('Should peg in SafeMoon without userdata', async () => {
     /* eslint-disable-next-line max-len */
     const expectedUserData = '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000053900000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000'
     await SAFEMOON_METHODS
@@ -571,7 +571,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     const tokenHolderBalanceBeforePegIn = await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     const vaultTokenBalanceBefore = await SAFEMOON_METHODS.balanceOf(VAULT_ADDRESS).call()
     const tx = await VAULT_METHODS
-      .pegInSafemoon(TOKEN_AMOUNT, DESTINATION_ADDRESS)
+      .pegInSafeMoon(TOKEN_AMOUNT, DESTINATION_ADDRESS)
       .send({ from: TOKEN_HOLDER_ADDRESS, gas: GAS_LIMIT })
     assertPegInEvent(
       tx.events.PegIn,
@@ -589,7 +589,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(lastSeenSafeMoonBalanceAfter), TOKEN_AMOUNT)
   })
 
-  it.only('Should peg in safemoon with userdata', async () => {
+  it('Should peg in SafeMoon with userdata', async () => {
     const userData = '0xdecaff'
     /* eslint-disable-next-line max-len */
     const expectedUserData = '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000053900000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000003decaff0000000000000000000000000000000000000000000000000000000000'
@@ -603,7 +603,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     await giveVaultAllowance(SAFEMOON_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
     const tokenHolderBalanceBeforePegIn = await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     const vaultTokenBalanceBefore = await SAFEMOON_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tx = await VAULT_METHODS['pegInSafemoon(uint256,string,bytes)'](
+    const tx = await VAULT_METHODS['pegInSafeMoon(uint256,string,bytes)'](
       TOKEN_AMOUNT,
       DESTINATION_ADDRESS,
       userData
@@ -624,12 +624,12 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(lastSeenSafeMoonBalanceAfter), TOKEN_AMOUNT)
   })
 
-  it('Cannot peg in safemoon via pegin function', async () => {
+  it('Cannot peg in SafeMoon via pegin function', async () => {
     await addTokenSupport(VAULT_METHODS, SAFEMOON_ADDRESS, PNETWORK_ADDRESS)
     await giveVaultAllowance(SAFEMOON_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
     await expectRevert(
       pegIn(VAULT_METHODS, SAFEMOON_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
-      'Cannot peg in Safemoon here - use `pegInSafemoon` instead!'
+      'Cannot peg in SafeMoon here - use `pegInSafeMoon` instead!'
     )
   })
 })
