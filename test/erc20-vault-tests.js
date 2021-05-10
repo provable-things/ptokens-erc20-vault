@@ -584,4 +584,35 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegIn), parseInt(tokenHolderBalanceBeforePegIn) - TOKEN_AMOUNT)
   })
+
+  it('Should peg in safemoon with userdata', async () => {
+    const userData = '0xdecaff'
+    /* eslint-disable-next-line max-len */
+    const expectedUserData = '0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000053900000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000003decaff0000000000000000000000000000000000000000000000000000000000'
+    await SAFEMOON_METHODS
+      .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
+      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    assert.strictEqual(parseInt(await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()), TOKEN_HOLDER_BALANCE)
+    await addTokenSupport(VAULT_METHODS, SAFEMOON_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(SAFEMOON_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    const tokenHolderBalanceBeforePegIn = await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const vaultTokenBalanceBefore = await SAFEMOON_METHODS.balanceOf(VAULT_ADDRESS).call()
+    const tx = await VAULT_METHODS['pegInSafemoon(uint256,string,bytes)'](
+      TOKEN_AMOUNT,
+      DESTINATION_ADDRESS,
+      userData
+    ).send({ from: TOKEN_HOLDER_ADDRESS, gas: GAS_LIMIT })
+    assertPegInEvent(
+      tx.events.PegIn,
+      SAFEMOON_ADDRESS,
+      TOKEN_HOLDER_ADDRESS,
+      TOKEN_AMOUNT,
+      DESTINATION_ADDRESS,
+      expectedUserData,
+    )
+    const vaultTokenBalanceAfter = await SAFEMOON_METHODS.balanceOf(VAULT_ADDRESS).call()
+    const tokenHolderBalanceAfterPegIn = await SAFEMOON_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
+    assert.strictEqual(parseInt(tokenHolderBalanceAfterPegIn), parseInt(tokenHolderBalanceBeforePegIn) - TOKEN_AMOUNT)
+  })
 })
