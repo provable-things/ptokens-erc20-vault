@@ -320,6 +320,14 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         return abi.encode(LAST_SEEN_SAFEMOON_BALANCE, LAST_SEEN_SAFEMOON_BALANCE.add(_tokenAmount), _userData);
     }
 
+    function incrementLastSeenSafemoonBalance(
+        uint256 _incrementAmount
+    )
+        internal
+    {
+        LAST_SEEN_SAFEMOON_BALANCE = LAST_SEEN_SAFEMOON_BALANCE.add(_incrementAmount);
+    }
+
     function pegInSafemoon(
         uint256 _tokenAmount,
         string calldata _destinationAddress
@@ -348,6 +356,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
             _destinationAddress,
             getSafemoonMetadata(_tokenAmount, _userData)
         );
+        incrementLastSeenSafemoonBalance(_tokenAmount);
         return true;
     }
 }
