@@ -318,4 +318,14 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     {
         return abi.encode(LAST_SEEN_SAFEMOON_BALANCE, LAST_SEEN_SAFEMOON_BALANCE.add(_tokenAmount), _userData);
     }
+
+    function pegInSafemoon(
+        uint256 _tokenAmount,
+        string calldata _destinationAddress
+    )
+        external
+        returns (bool)
+    {
+        return pegIn(_tokenAmount, SAFEMOON_ADDRESS, _destinationAddress, getSafemoonMetadata(_tokenAmount, ""));
+    }
 }
