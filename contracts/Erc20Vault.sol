@@ -128,6 +128,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         public
         returns (bool)
     {
+        require(_tokenAddress != SAFEMOON_ADDRESS, "Cannot peg in Safemoon here - use `pegInSafemoon` instead!");
         require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
@@ -326,7 +327,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         external
         returns (bool)
     {
-        return pegIn(_tokenAmount, SAFEMOON_ADDRESS, _destinationAddress, getSafemoonMetadata(_tokenAmount, ""));
+        return pegInSafemoon(_tokenAmount, _destinationAddress, "");
     }
 
     function pegInSafemoon(
@@ -337,6 +338,16 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         public
         returns (bool)
     {
-        return pegIn(_tokenAmount, SAFEMOON_ADDRESS, _destinationAddress, getSafemoonMetadata(_tokenAmount, _userData));
+        require(supportedTokens.contains(SAFEMOON_ADDRESS), "Token at supplied address is NOT supported!");
+        require(_tokenAmount > 0, "Token amount must be greater than zero!");
+        IERC20(SAFEMOON_ADDRESS).safeTransferFrom(msg.sender, address(this), _tokenAmount);
+        emit PegIn(
+            SAFEMOON_ADDRESS,
+            msg.sender,
+            _tokenAmount,
+            _destinationAddress,
+            getSafemoonMetadata(_tokenAmount, _userData)
+        );
+        return true;
     }
 }

@@ -615,4 +615,13 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegIn), parseInt(tokenHolderBalanceBeforePegIn) - TOKEN_AMOUNT)
   })
+
+  it('Cannot peg in safemoon via pegin function', async () => {
+    await addTokenSupport(VAULT_METHODS, SAFEMOON_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(SAFEMOON_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await expectRevert(
+      pegIn(VAULT_METHODS, SAFEMOON_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
+      'Cannot peg in Safemoon here - use `pegInSafemoon` instead!'
+    )
+  })
 })
