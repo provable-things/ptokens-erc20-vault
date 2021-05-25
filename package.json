@@ -1,7 +1,7 @@
 {
-  "name": "ptokens-perc20-smart-contract",
-  "version": "1.10.0",
-  "description": "The pToken pERC20-on-EOS-vault smart-contract",
+  "name": "ptokens-erc20-smart-contract",
+  "version": "1.11.0",
+  "description": "The pToken ERC20 vault smart-contract",
   "main": "index.js",
   "scripts": {
     "test": "echo 'Please see README.md for details on how to run the tests!'"
