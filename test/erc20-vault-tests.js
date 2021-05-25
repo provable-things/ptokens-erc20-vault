@@ -72,6 +72,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
   const INSUFFICIENT_TOKEN_AMOUNT_ERR = 'Token amount must be greater than zero!'
+  const ZERO_ADDRESS = `0x${new Array(40).fill(0).reduce((_acc, _e) => _acc + _e, '')}`
 
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
@@ -517,5 +518,37 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
     const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
     assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+  })
+
+  it('PNETWORK_ADDRESS can change PNETWORK_ADDRESS', async () => {
+    const newPNetworkAddress = getRandomEthAddress(web3)
+    const pNetworkBefore = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkBefore, PNETWORK_ADDRESS)
+    await VAULT_METHODS.setPNetwork(newPNetworkAddress).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    const pNetworkAfter = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkAfter.toLowerCase(), newPNetworkAddress)
+  })
+
+  it('NON_PNETWORK_ADDRESS cannot change PNETWORK_ADDRESS', async () => {
+    const newPNetworkAddress = getRandomEthAddress(web3)
+    const pNetworkBefore = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkBefore, PNETWORK_ADDRESS)
+    await expectRevert(
+      VAULT_METHODS.setPNetwork(newPNetworkAddress).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      'Caller must be PNETWORK address!',
+    )
+    const pNetworkAfter = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkAfter, pNetworkBefore)
+  })
+
+  it('Should not be able to set pNetwork address to the zero address', async () => {
+    const pNetworkBefore = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkBefore, PNETWORK_ADDRESS)
+    await expectRevert(
+      VAULT_METHODS.setPNetwork(ZERO_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      'Cannot set the zero address as the pNetwork address!',
+    )
+    const pNetworkAfter = await VAULT_METHODS.PNETWORK().call()
+    assert.strictEqual(pNetworkAfter, pNetworkBefore)
   })
 })

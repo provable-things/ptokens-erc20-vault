@@ -55,6 +55,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     }
 
     function setPNetwork(address _pnetwork) external onlyPNetwork {
+        require(_pnetwork != address(0), "Cannot set the zero address as the pNetwork address!");
         PNETWORK = _pnetwork;
     }
 
