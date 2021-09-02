@@ -333,7 +333,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
   })
 
-  it('Should peg out wETH', async () => {
+  it('Should peg out wETH without user data', async () => {
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
     const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
@@ -342,6 +342,22 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       .send({ from: PNETWORK_ADDRESS })
     assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
     assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+    const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+    assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+  })
+
+  it('Should peg out wETH with user data', async () => {
+    await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+    await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+    await VAULT_METHODS['pegOut(address,address,uint256,bytes)'](
+      TOKEN_HOLDER_ADDRESS,
+      WETH_ADDRESS,
+      TOKEN_AMOUNT,
+      USER_DATA,
+    ).send({ from: PNETWORK_ADDRESS })
+    assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+    assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'Vault\'s ETH balance must be 0!')
     const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
     assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
   })
