@@ -22,8 +22,10 @@
   "dependencies": {
     "@openzeppelin/contracts": "^3.2.0",
     "@openzeppelin/test-helpers": "^0.5.6",
+    "@truffle/hdwallet-provider": "^1.5.0",
     "docopt": "^0.6.2",
     "ramda": "^0.27.1",
+    "truffle-plugin-verify": "^0.5.14",
     "web3": "^1.5.1"
   },
   "devDependencies": {
