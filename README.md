@@ -1,24 +1,79 @@
 # :page_with_curl: Provable pToken ERC20 Vault Smart-Contract
 
-The __ETH__ smart-contract for the Provable ERC20 Vault! This vault is used for bridges _from_ EVM-compliant chains, whereby we can bridge ALL tokens via a single instance. Each token supported by this vault (which can be seen on-chain by calling the __`getSupportedTokens()`__ function) will then have their own __[ERC777 pToken](https://github.com/provable-things/ptokens-erc777-smart-contract)__ on the counterparty chain.
+The __ETH__ smart-contract for the Provable __`ERC20 Token`__ Vault! This vault is used for bridges _from_ EVM-compliant chains, and via it we can bridge ALL compliant tokens via a single smart-contract.
 
 &nbsp;
 
-### :guardsman: Smart-Contract Tests:
+## :boom: Deployment Guide
 
-1) Install dependencies:
+After cloning the repository, first install the dependencies:
 
 ```
-❍ pnpm install
+❍ npm i
 ```
 
-2) Start truffle via:
+Next, you need to fill in the the following information in the __`config.json`__:
+
+ - __`ENDPOINT`__ An endpoint for the network you intend to deploy on.
+ - __`GAS_PRICE`__ The gas price you intend to deploy the contracts with.
+ - __`PRIVATE_KEY`__ A private key for an account adequately funded for the deployment.
+ - __`WETH_ADDRESS`__ The address of the wrapped ETH token (or equivalent) for the network you're deploying on.
+ - __`TOKENS_TO_SUPPORT`__ An array of ETH token address to support the bridging of. Leave the array empty if no tokens are to bridged initially.
+ - __`ETHERSCAN_API_KEY`__ An __[etherscan](etherscan.io)__ API key, for use when verifying the contract.
+
+Once the __`config.json`__ is filled in correctly, it'll look something like the following:
+
+```
+{
+  "GAS_PRICE": 10e9,
+  "TOKENS_TO_SUPPORT": [
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc1"
+  ],
+  "ETHERSCAN_API_KEY": "51M7KKS9R5CZ2KRPHM1IA87P2W9UP5PGHQ",
+  "WETH_ADDRESS": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+  "PRIVATE_KEY": "2b18efff601d68188bf41da2f57a90c5f0250d4ebfbee5d13f262f0ef84c842a",
+  "ENDPOINT": "https://aged-blue-field.rinkeby.quiknode.pro/4ebfbee5d13f262f0ef84c842f/",
+}
+```
+
+Finally, deploy the vault to your chose network via the command:
+
+```
+❍ npx truffle migrate --network <network> --reset
+```
+
+Currently, there exists in the __`./truffle-config.js`__ configurations for the following __`<network>s`__
+
+```
+xDai
+rinkeby
+ropsten
+ethMainnet
+bscMainnet
+bscTestnet
+polygonMaticMainnet
+```
+
+Should you need to deploy to a different chain, inspect the existing configurations and make your own with values pertinent to that new chain.
+
+Finally, to verify the deployed contract run:
+
+```
+❍ npx truffle run verify Erc20Vault --network <network>
+```
+
+&nbsp;
+
+## :guardsman: Smart-Contract Tests:
+
+After filling in the __`config.json`__ per the information above, to run the tests first start truffle:
 
 ```
 ❍ pnpx truffle develop
 ```
 
-3) Run the tests via:
+Then Run the tests via:
 
 ```
 ❍ truffle_develop> test
