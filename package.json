@@ -1,6 +1,6 @@
 {
   "name": "ptokens-erc20-smart-contract",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "The pToken ERC20 vault smart-contract",
   "main": "index.js",
   "scripts": {
