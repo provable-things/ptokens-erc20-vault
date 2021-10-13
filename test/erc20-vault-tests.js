@@ -6,6 +6,7 @@ const ERC20_ARTIFACT = artifacts.require('ERC20_TOKEN')
 const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
 const VaultArtifact = artifacts.require('Erc20Vault')
 const { expectRevert } = require('@openzeppelin/test-helpers')
+const CONTRACT_WITH_RE_ENTRANCY_ATTACK_ARTIFACT = artifacts.require('CONTRACT_WITH_RE_ENTRANCY_ATTACK')
 const CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT = artifacts.require('CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN')
 
 const GAS_LIMIT = 3e6
@@ -566,5 +567,32 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     )
     const pNetworkAfter = await VAULT_METHODS.PNETWORK().call()
     assert.strictEqual(pNetworkAfter, pNetworkBefore)
+  })
+
+  it('Pegging out wETH Should not be susceptible to re-entrancy attack', async () => {
+    const calldata = web3.eth.abi.encodeFunctionCall({
+      name: 'attempReEntrancyAttack',
+      type: 'function',
+      inputs: [],
+    }, [])
+    const PEG_OUT_GAS_LIMIT = 450e3
+    const reEntrancyAttackContract = await getContract(web3, CONTRACT_WITH_RE_ENTRANCY_ATTACK_ARTIFACT)
+    const reEntrancyAttackContractAddress = reEntrancyAttackContract._address
+    await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+    const reEntrancyAttackContractEthBalanceBeforePegout = await web3.eth.getBalance(reEntrancyAttackContractAddress)
+    assert.strictEqual(reEntrancyAttackContractEthBalanceBeforePegout, '0')
+    await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS).send({ from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
+    const expectedError = 'ETH transfer failed when pegging out wETH!'
+    expectRevert(VAULT_METHODS['pegOut(address,address,uint256,bytes)'](
+      reEntrancyAttackContractAddress, WETH_ADDRESS, TOKEN_AMOUNT, calldata
+    )
+      .send({ from: PNETWORK_ADDRESS, gas: PEG_OUT_GAS_LIMIT }),
+    expectedError
+    )
+    assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), `${TOKEN_AMOUNT}`)
+    const reEntrancyAttackContractEthBalanceAfterPegout = await web3.eth.getBalance(reEntrancyAttackContractAddress)
+    assert.strictEqual(reEntrancyAttackContractEthBalanceAfterPegout, '0')
+    const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+    assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
   })
 })
