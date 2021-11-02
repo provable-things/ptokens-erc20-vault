@@ -240,17 +240,6 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         }
     }
 
-    function destroy()
-        external
-        onlyPNetwork
-    {
-        for (uint256 i = 0; i < supportedTokens.length(); i++) {
-            address tokenAddress = supportedTokens.at(i);
-            require(IERC20(tokenAddress).balanceOf(address(this)) == 0, "Balance of supported tokens must be 0");
-        }
-        selfdestruct(msg.sender);
-    }
-
     function migrateSingle(
         address payable _to,
         address _tokenAddress
