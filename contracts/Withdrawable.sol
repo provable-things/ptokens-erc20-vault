@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.24;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "./AbstractOwnable.sol";
 
 abstract contract Withdrawable is AbstractOwnable {
-  using SafeERC20 for IERC20;
+  using SafeERC20Upgradeable for IERC20Upgradeable;
   address constant ETHER = address(0);
 
   event LogWithdrawToken(
@@ -29,7 +29,7 @@ abstract contract Withdrawable is AbstractOwnable {
     if (_tokenAddress == ETHER) {
       payable(msg.sender).transfer(_amount);
     } else {
-      IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
+      IERC20Upgradeable(_tokenAddress).safeTransfer(msg.sender, _amount);
     }
     emit LogWithdrawToken(msg.sender, _tokenAddress, _amount);
   }
@@ -38,6 +38,6 @@ abstract contract Withdrawable is AbstractOwnable {
   function adminWithdrawAllowed(address asset) internal virtual view returns(uint allowedAmount) {
     allowedAmount = asset == ETHER
       ? address(this).balance
-      : IERC20(asset).balanceOf(address(this));
+      : IERC20Upgradeable(asset).balanceOf(address(this));
   }
 }
