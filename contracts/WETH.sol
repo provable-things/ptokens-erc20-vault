@@ -1,7 +1,4 @@
-/**
- *Submitted for verification at Etherscan.io on 2017-12-12
-*/
-
+// SPDX-License-Identifier: GNU
 // Copyright (C) 2015, 2016, 2017 Dapphub
 
 // This program is free software: you can redistribute it and/or modify
@@ -17,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-pragma solidity ^0.6.0;
+pragma solidity ^0.8.0;
 
 contract WETH {
   string public name     = "Wrapped Ether";
@@ -37,13 +34,13 @@ contract WETH {
   }
   function deposit() public payable {
     balanceOf[msg.sender] += msg.value;
-    Deposit(msg.sender, msg.value);
+    emit Deposit(msg.sender, msg.value);
   }
   function withdraw(uint wad) public {
     require(balanceOf[msg.sender] >= wad);
     balanceOf[msg.sender] -= wad;
-    msg.sender.transfer(wad);
-    Withdrawal(msg.sender, wad);
+    payable(msg.sender).transfer(wad);
+    emit Withdrawal(msg.sender, wad);
   }
 
   function totalSupply() public view returns (uint) {
@@ -52,7 +49,7 @@ contract WETH {
 
   function approve(address guy, uint wad) public returns (bool) {
     allowance[msg.sender][guy] = wad;
-    Approval(msg.sender, guy, wad);
+    emit Approval(msg.sender, guy, wad);
     return true;
   }
 
@@ -66,7 +63,7 @@ contract WETH {
   {
     require(balanceOf[src] >= wad);
 
-    if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
+    if (src != msg.sender && allowance[src][msg.sender] != 0) {
       require(allowance[src][msg.sender] >= wad);
       allowance[src][msg.sender] -= wad;
     }
@@ -74,7 +71,7 @@ contract WETH {
     balanceOf[src] -= wad;
     balanceOf[dst] += wad;
 
-    Transfer(src, dst, wad);
+    emit Transfer(src, dst, wad);
 
     return true;
   }

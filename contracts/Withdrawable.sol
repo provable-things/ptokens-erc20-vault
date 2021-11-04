@@ -1,7 +1,8 @@
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.4.24;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./AbstractOwnable.sol";
 
 abstract contract Withdrawable is AbstractOwnable {
@@ -26,7 +27,7 @@ abstract contract Withdrawable is AbstractOwnable {
 
   function _withdraw(address _tokenAddress, uint _amount) internal {
     if (_tokenAddress == ETHER) {
-      msg.sender.transfer(_amount);
+      payable(msg.sender).transfer(_amount);
     } else {
       IERC20(_tokenAddress).safeTransfer(msg.sender, _amount);
     }

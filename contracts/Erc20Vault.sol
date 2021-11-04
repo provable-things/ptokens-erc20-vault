@@ -1,10 +1,12 @@
-pragma solidity ^0.6.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
 
+//import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777Upgradeable.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/EnumerableSet.sol";
-import "@openzeppelin/contracts/introspection/IERC1820Registry.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import "@openzeppelin/contracts/utils/introspection/IERC1820Registry.sol";
 import "@openzeppelin/contracts/token/ERC777/IERC777Recipient.sol";
 import "./IWETH.sol";
 import "./Withdrawable.sol";
@@ -32,7 +34,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     constructor(
         address _weth,
         address [] memory _tokensToSupport
-    ) public {
+    ) {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {
             supportedTokens.add(_tokensToSupport[i]);
@@ -63,7 +65,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         return supportedTokens.contains(_token);
     }
 
-    function _owner() internal override returns(address) {
+    function _owner() internal view override returns(address) {
         return PNETWORK;
     }
 
@@ -166,7 +168,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     {
         require(supportedTokens.contains(address(weth)), "WETH is NOT supported!");
         require(msg.value > 0, "Ethers amount must be greater than zero!");
-        weth.deposit.value(msg.value)();
+        weth.deposit{ value: msg.value }();
         emit PegIn(address(weth), msg.sender, msg.value, _destinationAddress, _userData);
         return true;
     }
@@ -183,8 +185,9 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
         // on the provided 2300 gas stipend and instead forwards all available gas onwards.
         // SOURCE: https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now
-        (bool success, ) = _tokenRecipient.call.value(_tokenAmount)(_userData);
+        (bool success, ) = _tokenRecipient.call{ value: _tokenAmount }(_userData);
         require(success, "ETH transfer failed when pegging out wETH!");
+        return success;
     }
 
     function pegOut(
@@ -212,7 +215,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
     )
         external
         onlyPNetwork
-        returns (bool)
+        returns (bool success)
     {
         if (_tokenAddress == address(weth)) {
             pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
