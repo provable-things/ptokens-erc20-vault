@@ -68,7 +68,6 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   const TOKEN_HOLDER_BALANCE = 1e6
   const DESTINATION_ADDRESS = 'aneosaddress'
   const NON_PNETWORK_ERR = 'Caller must be PNETWORK address!'
-  const MIGRATION_DESTINATION_ADDRESS = getRandomEthAddress(web3)
   const INSUFFICIENT_BALANCE_ERR = 'ERC20: transfer amount exceeds balance'
   const INSUFFICIENT_ALLOWANCE_ERR = 'ERC20: transfer amount exceeds allowance'
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
@@ -203,28 +202,6 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
   })
 
-  it('PNETWORK_ADDRESS can migrate', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    const migratedAddressTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    const vaultTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tx = await pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
-    assertPegInEvent(tx.events.PegIn, ERC20_TOKEN_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
-    const vaultTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
-    await VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const migratedAddressTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
-  })
-
-  it('Non PNETWORK_ADDRESS cannot migrate', async () => {
-    await expectRevert(
-      VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
-      NON_PNETWORK_ERR,
-    )
-  })
-
   it('Token addresses sent to constructor should be supported', async () => {
     const supportedTokenAddresses = [getRandomEthAddress(web3), getRandomEthAddress(web3)]
     const newContract = await getContract(
@@ -236,32 +213,6 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       supportedTokenAddresses.map(_address => newContract.methods.IS_TOKEN_SUPPORTED(_address))
     )
     tokensAreSupportedBools.map(_tokenIsSupported => assert(_tokenIsSupported))
-  })
-
-  it('PNETWORK_ADDRESS can migrate single', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    const migratedAddressTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    const vaultTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tx = await pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
-    assertPegInEvent(tx.events.PegIn, ERC20_TOKEN_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
-    const vaultTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
-    await VAULT_METHODS
-      .migrateSingle(MIGRATION_DESTINATION_ADDRESS, ERC20_TOKEN_ADDRESS)
-      .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const migratedAddressTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
-  })
-
-  it('Non PNETWORK_ADDRESS cannot migrateSingle', async () => {
-    await expectRevert(
-      VAULT_METHODS
-        .migrateSingle(MIGRATION_DESTINATION_ADDRESS, ERC20_TOKEN_ADDRESS)
-        .send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
-      NON_PNETWORK_ERR,
-    )
   })
 
   it('Automatically pegIn on ERC777 send', async () => {
@@ -300,28 +251,6 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       DESTINATION_ADDRESS
     )
     assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
-  })
-
-  it('PNETWORK_ADDRESS can migrate with ERC777', async () => {
-    const erc777 = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
-    await addTokenSupport(VAULT_METHODS, erc777.options.address, PNETWORK_ADDRESS)
-    await giveVaultAllowance(erc777.methods, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    const migratedAddressTokenBalanceBefore = await erc777.methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    const vaultTokenBalanceBefore = await erc777.methods.balanceOf(VAULT_ADDRESS).call()
-    const tx = await pegIn(
-      VAULT_METHODS,
-      erc777.options.address,
-      TOKEN_AMOUNT,
-      TOKEN_HOLDER_ADDRESS,
-      DESTINATION_ADDRESS
-    )
-    assertPegInEvent(tx.events.PegIn, erc777.options.address, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
-    const vaultTokenBalanceAfter = await erc777.methods.balanceOf(VAULT_ADDRESS).call()
-    assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceBefore), 0)
-    await VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const migratedAddressTokenBalanceAfter = await erc777.methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    assert.strictEqual(parseInt(migratedAddressTokenBalanceAfter), TOKEN_AMOUNT)
   })
 
   it('Should peg in wETH', async () => {
@@ -436,38 +365,6 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     const userDataFromLog = `0x${maybeStripHexPrefix(tokensReceivedLog.data)
       .slice(startIndexOfUserData, startIndexOfUserData + maybeStripHexPrefix(userData).length)}`
     assert.strictEqual(userData, userDataFromLog)
-  })
-
-  it('Should migrate all token balances', async () => {
-    const NUM_TOKEN_CONTRACTS = 5
-    const contracts = await Promise.all(
-      new Array(NUM_TOKEN_CONTRACTS).fill().map(_ => getContract(web3, ERC20_ARTIFACT))
-    )
-    const tokens = contracts.map(_contract => ({
-      methods: prop('methods', _contract),
-      address: prop('_address', _contract),
-    }))
-    await Promise.all(tokens.map(({ methods, address }) =>
-      methods
-        .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
-        .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-        .then(_ => addTokenSupport(VAULT_METHODS, address, PNETWORK_ADDRESS))
-        .then(_ => giveVaultAllowance(methods, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT))
-        .then(_ => pegIn(VAULT_METHODS, address, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS))
-    ))
-    const tokenBalancesAfterPegin = await Promise.all(tokens.map(({ methods }) =>
-      methods.balanceOf(VAULT_ADDRESS).call()
-    ))
-    tokenBalancesAfterPegin.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
-    await VAULT_METHODS.migrate(MIGRATION_DESTINATION_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const migratedTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
-      methods.balanceOf(MIGRATION_DESTINATION_ADDRESS).call()
-    ))
-    migratedTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), TOKEN_AMOUNT))
-    const vaultTokenBalancesAfter = await Promise.all(tokens.map(({ methods }) =>
-      methods.balanceOf(VAULT_ADDRESS).call()
-    ))
-    vaultTokenBalancesAfter.map(_balance => assert.strictEqual(parseInt(_balance), 0))
   })
 
   it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {

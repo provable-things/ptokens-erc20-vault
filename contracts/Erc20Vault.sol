@@ -226,40 +226,4 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
             }
         }
     }
-
-    function migrate(
-        address payable _to
-    )
-        external
-        onlyPNetwork
-    {
-        uint256 numberOfTokens = supportedTokens.length();
-        for (uint256 i = 0; i < numberOfTokens; i++) {
-            address tokenAddress = supportedTokens.at(0);
-            _migrateSingle(_to, tokenAddress);
-        }
-    }
-
-    function migrateSingle(
-        address payable _to,
-        address _tokenAddress
-    )
-        external
-        onlyPNetwork
-    {
-        _migrateSingle(_to, _tokenAddress);
-    }
-
-    function _migrateSingle(
-        address payable _to,
-        address _tokenAddress
-    )
-        private
-    {
-        if (supportedTokens.contains(_tokenAddress)) {
-            uint balance = IERC20(_tokenAddress).balanceOf(address(this));
-            IERC20(_tokenAddress).safeTransfer(_to, balance);
-            supportedTokens.remove(_tokenAddress);
-        }
-    }
 }
