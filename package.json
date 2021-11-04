@@ -23,6 +23,7 @@
     "@openzeppelin/contracts": "^4.2.0",
     "@openzeppelin/contracts-upgradeable": "^4.3.2",
     "@openzeppelin/test-helpers": "^0.5.6",
+    "@openzeppelin/truffle-upgrades": "^1.11.0",
     "@truffle/hdwallet-provider": "^1.5.0",
     "docopt": "^0.6.2",
     "ramda": "^0.27.1",
