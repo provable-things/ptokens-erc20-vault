@@ -2,12 +2,12 @@
 const assert = require('assert')
 const { prop, find, values } = require('ramda')
 const WETH_ARTIFACT = artifacts.require('WETH')
-const ERC20_ARTIFACT = artifacts.require('ERC20_TOKEN')
-const ERC777_ARTIFACT = artifacts.require('ERC777_TOKEN')
+const ERC20_ARTIFACT = artifacts.require('Erc20Token')
+const ERC777_ARTIFACT = artifacts.require('Erc777Token')
 const VaultArtifact = artifacts.require('Erc20Vault')
 const { expectRevert } = require('@openzeppelin/test-helpers')
-const CONTRACT_WITH_RE_ENTRANCY_ATTACK_ARTIFACT = artifacts.require('CONTRACT_WITH_RE_ENTRANCY_ATTACK')
-const CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT = artifacts.require('CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN')
+const ContractWithReEntrancyAttack_ARTIFACT = artifacts.require('ContractWithReEntrancyAttack')
+const ContractWithExpensiveFallbackFunction_ARTIFACT = artifacts.require('ContractWithExpensiveFallbackFunction')
 
 const GAS_LIMIT = 3e6
 
@@ -81,124 +81,124 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     const VAULT_CONTRACT = await getContract(web3, VaultArtifact, [WETH_ADDRESS, []])
     VAULT_METHODS = prop('methods', VAULT_CONTRACT)
     VAULT_ADDRESS = prop('_address', VAULT_CONTRACT)
-    const ERC20_TOKEN_CONTRACT = await getContract(web3, ERC20_ARTIFACT)
-    ERC20_TOKEN_METHODS = prop('methods', ERC20_TOKEN_CONTRACT)
-    await ERC20_TOKEN_METHODS
+    const Erc20Token_CONTRACT = await getContract(web3, ERC20_ARTIFACT)
+    Erc20Token_METHODS = prop('methods', Erc20Token_CONTRACT)
+    await Erc20Token_METHODS
       .transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
       .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    assert.strictEqual(parseInt(await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()), TOKEN_HOLDER_BALANCE)
-    ERC20_TOKEN_ADDRESS = prop('_address', ERC20_TOKEN_CONTRACT)
+    assert.strictEqual(parseInt(await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()), TOKEN_HOLDER_BALANCE)
+    Erc20Token_ADDRESS = prop('_address', Erc20Token_CONTRACT)
   })
 
   it('PNETWORK_ADDRESS can add appoved token address', async () => {
-    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(!tokenIsSupported)
-    await VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    await VAULT_METHODS.addSupportedToken(Erc20Token_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(tokenIsSupported)
   })
 
   it('NON_PNETWORK_ADDRESS cannot add appoved token address', async () => {
-    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(!tokenIsSupported)
     await expectRevert(
-      VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      VAULT_METHODS.addSupportedToken(Erc20Token_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
-    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(!tokenIsSupported)
   })
 
   it('PNETWORK_ADDRESS can remove appoved token address', async () => {
-    await VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    await VAULT_METHODS.addSupportedToken(Erc20Token_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(tokenIsSupported)
-    await VAULT_METHODS.removeSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    await VAULT_METHODS.removeSupportedToken(Erc20Token_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(!tokenIsSupported)
   })
 
   it('NON_PNETWORK_ADDRESS cannot remove appoved token address', async () => {
-    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    let tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(!tokenIsSupported)
-    await VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(ERC20_TOKEN_ADDRESS).call()
+    await VAULT_METHODS.addSupportedToken(Erc20Token_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    tokenIsSupported = await VAULT_METHODS.IS_TOKEN_SUPPORTED(Erc20Token_ADDRESS).call()
     assert(tokenIsSupported)
     await expectRevert(
-      VAULT_METHODS.removeSupportedToken(ERC20_TOKEN_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
+      VAULT_METHODS.removeSupportedToken(Erc20Token_ADDRESS).send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
   })
 
   it('Should NOT peg in if token is not supported', async () => {
     await expectRevert(
-      pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
+      pegIn(VAULT_METHODS, Erc20Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
       NON_SUPPORTED_TOKEN_ERR
     )
   })
 
   it('Should NOT peg in if token is supported but insufficient allowance approved', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
     await expectRevert(
-      pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
+      pegIn(VAULT_METHODS, Erc20Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
       INSUFFICIENT_ALLOWANCE_ERR
     )
   })
 
   it('Should NOT peg in if token is supported and sufficient allowance approved, but token amount is 0', async () => {
     const tokenAmount = 0
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(Erc20Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
     await expectRevert(
-      pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, tokenAmount, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
+      pegIn(VAULT_METHODS, Erc20Token_ADDRESS, tokenAmount, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS),
       INSUFFICIENT_TOKEN_AMOUNT_ERR,
     )
   })
 
   it('Should peg in if token is supported and sufficient allowance approved', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    const tokenHolderBalanceBeforePegIn = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
-    const vaultTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tx = await pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
-    assertPegInEvent(tx.events.PegIn, ERC20_TOKEN_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
-    const vaultTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tokenHolderBalanceAfterPegIn = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(Erc20Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    const tokenHolderBalanceBeforePegIn = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const vaultTokenBalanceBefore = await Erc20Token_METHODS.balanceOf(VAULT_ADDRESS).call()
+    const tx = await pegIn(VAULT_METHODS, Erc20Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    assertPegInEvent(tx.events.PegIn, Erc20Token_ADDRESS, TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, DESTINATION_ADDRESS)
+    const vaultTokenBalanceAfter = await Erc20Token_METHODS.balanceOf(VAULT_ADDRESS).call()
+    const tokenHolderBalanceAfterPegIn = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegIn), parseInt(tokenHolderBalanceBeforePegIn) - TOKEN_AMOUNT)
   })
 
   it('NON_PNETWORK_ADDRESS cannot peg out', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    await pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(Erc20Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await pegIn(VAULT_METHODS, Erc20Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
     await expectRevert(
       VAULT_METHODS
-        .pegOut(TOKEN_HOLDER_ADDRESS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT)
+        .pegOut(TOKEN_HOLDER_ADDRESS, Erc20Token_ADDRESS, TOKEN_AMOUNT)
         .send({ from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       NON_PNETWORK_ERR,
     )
   })
 
   it('PNETWORK_ADDRESS cannot peg out if insufficient balance', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
     await expectRevert(
       VAULT_METHODS
-        .pegOut(TOKEN_HOLDER_ADDRESS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT)
+        .pegOut(TOKEN_HOLDER_ADDRESS, Erc20Token_ADDRESS, TOKEN_AMOUNT)
         .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT }),
       INSUFFICIENT_BALANCE_ERR,
     )
   })
 
   it('PNETWORK_ADDRESS can peg out with sufficient balance', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    await pegIn(VAULT_METHODS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
-    const tokenHolderBalanceBeforePegOut = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(Erc20Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await pegIn(VAULT_METHODS, Erc20Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    const tokenHolderBalanceBeforePegOut = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     await VAULT_METHODS
-      .pegOut(TOKEN_HOLDER_ADDRESS, ERC20_TOKEN_ADDRESS, TOKEN_AMOUNT)
+      .pegOut(TOKEN_HOLDER_ADDRESS, Erc20Token_ADDRESS, TOKEN_AMOUNT)
       .send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const tokenHolderBalanceAfterPegOut = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const tokenHolderBalanceAfterPegOut = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
   })
 
@@ -293,13 +293,13 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   })
 
   it('Should peg in with user data', async () => {
-    await addTokenSupport(VAULT_METHODS, ERC20_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await giveVaultAllowance(ERC20_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    const tokenHolderBalanceBeforePegIn = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
-    const vaultTokenBalanceBefore = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
+    await addTokenSupport(VAULT_METHODS, Erc20Token_ADDRESS, PNETWORK_ADDRESS)
+    await giveVaultAllowance(Erc20Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    const tokenHolderBalanceBeforePegIn = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const vaultTokenBalanceBefore = await Erc20Token_METHODS.balanceOf(VAULT_ADDRESS).call()
     const tx = await pegInWithUserData(
       VAULT_METHODS,
-      ERC20_TOKEN_ADDRESS,
+      Erc20Token_ADDRESS,
       TOKEN_AMOUNT,
       TOKEN_HOLDER_ADDRESS,
       DESTINATION_ADDRESS,
@@ -307,14 +307,14 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
     )
     assertPegInEvent(
       tx.events.PegIn,
-      ERC20_TOKEN_ADDRESS,
+      Erc20Token_ADDRESS,
       TOKEN_HOLDER_ADDRESS,
       TOKEN_AMOUNT,
       DESTINATION_ADDRESS,
       USER_DATA
     )
-    const vaultTokenBalanceAfter = await ERC20_TOKEN_METHODS.balanceOf(VAULT_ADDRESS).call()
-    const tokenHolderBalanceAfterPegIn = await ERC20_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const vaultTokenBalanceAfter = await Erc20Token_METHODS.balanceOf(VAULT_ADDRESS).call()
+    const tokenHolderBalanceAfterPegIn = await Erc20Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(vaultTokenBalanceAfter), parseInt(vaultTokenBalanceBefore) + TOKEN_AMOUNT)
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegIn), parseInt(tokenHolderBalanceBeforePegIn) - TOKEN_AMOUNT)
   })
@@ -337,25 +337,25 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
 
   it('Can peg out with user data', async () => {
     const userData = '0xdecaff'
-    const ERC777_TOKEN_CONTRACT = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
-    const ERC777_TOKEN_ADDRESS = ERC777_TOKEN_CONTRACT.options.address
-    const ERC777_TOKEN_METHODS = prop('methods', ERC777_TOKEN_CONTRACT)
-    await VAULT_METHODS.addSupportedToken(ERC777_TOKEN_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    await giveVaultAllowance(ERC777_TOKEN_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
-    await addTokenSupport(VAULT_METHODS, ERC777_TOKEN_ADDRESS, PNETWORK_ADDRESS)
-    await pegIn(VAULT_METHODS, ERC777_TOKEN_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
-    const tokenHolderBalanceBeforePegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const Erc777Token_CONTRACT = await getContract(web3, ERC777_ARTIFACT, [{ from: TOKEN_HOLDER_ADDRESS }])
+    const Erc777Token_ADDRESS = Erc777Token_CONTRACT.options.address
+    const Erc777Token_METHODS = prop('methods', Erc777Token_CONTRACT)
+    await VAULT_METHODS.addSupportedToken(Erc777Token_ADDRESS).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
+    await giveVaultAllowance(Erc777Token_METHODS, TOKEN_HOLDER_ADDRESS, VAULT_ADDRESS, TOKEN_AMOUNT)
+    await addTokenSupport(VAULT_METHODS, Erc777Token_ADDRESS, PNETWORK_ADDRESS)
+    await pegIn(VAULT_METHODS, Erc777Token_ADDRESS, TOKEN_AMOUNT, TOKEN_HOLDER_ADDRESS, DESTINATION_ADDRESS)
+    const tokenHolderBalanceBeforePegOut = await Erc777Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     await VAULT_METHODS['pegOut(address,address,uint256,bytes)'](
       TOKEN_HOLDER_ADDRESS,
-      ERC777_TOKEN_ADDRESS,
+      Erc777Token_ADDRESS,
       TOKEN_AMOUNT,
       userData,
     ).send({ from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
-    const tokenHolderBalanceAfterPegOut = await ERC777_TOKEN_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
+    const tokenHolderBalanceAfterPegOut = await Erc777Token_METHODS.balanceOf(TOKEN_HOLDER_ADDRESS).call()
     assert.strictEqual(parseInt(tokenHolderBalanceAfterPegOut), parseInt(tokenHolderBalanceBeforePegOut) + TOKEN_AMOUNT)
     const TOKENS_RECEIVED_EVENT_TOPIC = '0x06b541ddaa720db2b10a4d0cdac39b8d360425fc073085fac19bc82614677987'
     const tokensReceivedLogs = await web3.eth.getPastLogs({
-      address: ERC777_TOKEN_ADDRESS,
+      address: Erc777Token_ADDRESS,
       topics: [ TOKENS_RECEIVED_EVENT_TOPIC ]
     })
     assert.strictEqual(tokensReceivedLogs.length, 1)
@@ -369,7 +369,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
 
   it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
     const PEG_OUT_GAS_LIMIT = 450e3
-    const expensiveFallbackContract = await getContract(web3, CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT)
+    const expensiveFallbackContract = await getContract(web3, ContractWithExpensiveFallbackFunction_ARTIFACT)
     const expensiveFallbackContractAddress = expensiveFallbackContract._address
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
@@ -388,7 +388,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
   it('Should be able to peg out wETH with user data to a smart-contract', async () => {
     const userData = '0xdecaff'
     const PEG_OUT_GAS_LIMIT = 450e3
-    const expensiveFallbackContract = await getContract(web3, CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN_ARTIFACT)
+    const expensiveFallbackContract = await getContract(web3, ContractWithExpensiveFallbackFunction_ARTIFACT)
     const expensiveFallbackContractAddress = expensiveFallbackContract._address
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
@@ -473,7 +473,7 @@ contract('Erc20Vault', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_AD
       inputs: [],
     }, [])
     const PEG_OUT_GAS_LIMIT = 450e3
-    const reEntrancyAttackContract = await getContract(web3, CONTRACT_WITH_RE_ENTRANCY_ATTACK_ARTIFACT)
+    const reEntrancyAttackContract = await getContract(web3, ContractWithReEntrancyAttack_ARTIFACT)
     const reEntrancyAttackContractAddress = reEntrancyAttackContract._address
     await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
     const reEntrancyAttackContractEthBalanceBeforePegout = await web3.eth.getBalance(reEntrancyAttackContractAddress)

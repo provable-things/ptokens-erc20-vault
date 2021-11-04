@@ -17,7 +17,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
 
     IERC1820Registry constant private _erc1820 = IERC1820Registry(0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24);
     bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
-    bytes32 constant private ERC777_TOKEN_INTERFACE_HASH = keccak256("ERC777Token");
+    bytes32 constant private Erc777Token_INTERFACE_HASH = keccak256("ERC777Token");
 
     EnumerableSet.AddressSet private supportedTokens;
     address public PNETWORK;
@@ -220,7 +220,7 @@ contract Erc20Vault is Withdrawable, IERC777Recipient {
         if (_tokenAddress == address(weth)) {
             pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
         } else {
-            address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, ERC777_TOKEN_INTERFACE_HASH);
+            address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
             if (erc777Address == address(0)) {
                 return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
             } else {

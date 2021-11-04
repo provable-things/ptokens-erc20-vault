@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-contract CONTRACT_WITH_EXPENSIVE_FALLBACK_FXN {
+contract ContractWithExpensiveFallbackFunction {
     mapping(uint256 => address) pointlessMapping;
 
     event FallbackCalled(uint256 amount, bytes data);
