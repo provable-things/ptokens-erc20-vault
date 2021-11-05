@@ -1,7 +1,7 @@
 {
   "name": "ptokens-erc20-vault-smart-contract",
   "version": "1.14.0",
-  "description": "The pToken ERC20 vault smart-contract",
+  "description": "The pToken ERC20 vault smart-contract & CLI",
   "main": "cli.js",
   "scripts": {
     "test": "echo 'Please see README.md for details!"

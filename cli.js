@@ -3,6 +3,7 @@
 require('dotenv').config()
 const { docopt } = require('docopt')
 const { version } = require('./package.json')
+const { setPNetwork } = require('./lib/set-pnetwork')
 const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { flattenContract } = require('./lib/flatten-contract')
@@ -14,8 +15,10 @@ const HELP_ARG = '--help'
 const TOOL_NAME = 'cli.js'
 const VERSION_ARG = '--version'
 const NETWORK_ARG = '<network>'
+const ETH_ADDRESS_ARG= '<ethAddress>'
 const DEPLOY_VAULT_CMD = 'deployVault'
 const VERIFY_VAULT_CMD = 'verifyVault'
+const SET_PNETWORK_CMD = 'setPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
@@ -51,9 +54,11 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
   ${TOOL_NAME} ${SHOW_EXISTING_CONTRACTS_CMD}
   ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
+  ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${TOKENS_TO_SUPPORT_ARG}...
 
 ❍ Commands:
+  ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
@@ -64,6 +69,7 @@ const USAGE_INFO = `
 ❍ Options:
   ${HELP_ARG}                ❍ Show this message.
   ${VERSION_ARG}             ❍ Show tool version.
+  ${ETH_ADDRESS_ARG}          ❍ A valid ETH address.
   ${DEPLOYED_ADDRESS_ARG}     ❍ The ETH address of the deployed vault.
   ${TOKENS_TO_SUPPORT_ARG}     ❍ Addresses of ERC20 tokens the vault will support.
   ${WETH_ADDRESS_ARG}         ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
@@ -83,6 +89,8 @@ const main = _ => {
     return showExistingContractAddresses()
   else if (CLI_ARGS[GET_ENCODED_INIT_ARGS_CMD])
     return getEncodedInitArgs(CLI_ARGS[WETH_ADDRESS_ARG], CLI_ARGS[TOKENS_TO_SUPPORT_ARG])
+  else if (CLI_ARGS[SET_PNETWORK_CMD])
+    return setPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
 }
 
 main().catch(_err => console.error('✘', _err.message))
