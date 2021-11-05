@@ -4,6 +4,7 @@ require('dotenv').config()
 const { docopt } = require('docopt')
 const { version } = require('./package.json')
 const { setPNetwork } = require('./lib/set-pnetwork')
+const { getPNetwork } = require('./lib/get-pnetwork')
 const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { flattenContract } = require('./lib/flatten-contract')
@@ -15,10 +16,11 @@ const HELP_ARG = '--help'
 const TOOL_NAME = 'cli.js'
 const VERSION_ARG = '--version'
 const NETWORK_ARG = '<network>'
-const ETH_ADDRESS_ARG= '<ethAddress>'
+const ETH_ADDRESS_ARG = '<ethAddress>'
 const DEPLOY_VAULT_CMD = 'deployVault'
 const VERIFY_VAULT_CMD = 'verifyVault'
 const SET_PNETWORK_CMD = 'setPNetwork'
+const GET_PNETWORK_CMD = 'getPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
@@ -53,6 +55,7 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
   ${TOOL_NAME} ${SHOW_EXISTING_CONTRACTS_CMD}
+  ${TOOL_NAME} ${GET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${TOKENS_TO_SUPPORT_ARG}...
@@ -62,6 +65,7 @@ const USAGE_INFO = `
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
+  ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
   ${GET_ENCODED_INIT_ARGS_CMD}    ❍ Calculate the initializer function arguments in ABI encoded format.
   ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
@@ -91,6 +95,8 @@ const main = _ => {
     return getEncodedInitArgs(CLI_ARGS[WETH_ADDRESS_ARG], CLI_ARGS[TOKENS_TO_SUPPORT_ARG])
   else if (CLI_ARGS[SET_PNETWORK_CMD])
     return setPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
+  else if (CLI_ARGS[GET_PNETWORK_CMD])
+    return getPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
 }
 
 main().catch(_err => console.error('✘', _err.message))
