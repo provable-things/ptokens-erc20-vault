@@ -1,6 +1,6 @@
 *.sw*
 /node_modules
 /build
-**/flattened
+**flattened**
 /.openzeppelin
 .env
