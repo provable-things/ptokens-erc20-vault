@@ -39,7 +39,11 @@ contract WETH {
   function withdraw(uint wad) public {
     require(balanceOf[msg.sender] >= wad);
     balanceOf[msg.sender] -= wad;
-    payable(msg.sender).transfer(wad);
+    // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
+    // on the provided 2300 gas stipend and instead forwards all available gas onwards.
+    // SOURCE: https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now
+    (bool success, ) = msg.sender.call{ value: wad }("");
+    require(success, "Transfer failed when withdrawing wETH!");
     emit Withdrawal(msg.sender, wad);
   }
 
