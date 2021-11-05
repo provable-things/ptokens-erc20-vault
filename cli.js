@@ -4,11 +4,13 @@ require('dotenv').config()
 const { docopt } = require('docopt')
 const { version } = require('./package.json')
 const { flattenContract } = require('./lib/flatten-contract')
+const { showSuggestedFees } = require('./lib/show-suggested-fees')
 
 const HELP_ARG = '--help'
 const VERSION_ARG = '--version'
 const TOOL_NAME = 'vault-cli.js'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
+const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 
 const USAGE_INFO = `
 ❍ pTokens ERC20 Vault CLI ❍
@@ -29,8 +31,10 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${HELP_ARG}
   ${TOOL_NAME} ${VERSION_ARG}
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
+  ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
 
 ❍ Commands:
+  ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
 
 ❍ Options:
@@ -41,6 +45,8 @@ const main = _ => {
   const CLI_ARGS = docopt(USAGE_INFO, { version })
   if (CLI_ARGS[FLATTEN_CONTRACT_CMD]) {
     return flattenContract()
+  } else if (CLI_ARGS[SHOW_SUGGESTED_FEES_CMD]) {
+    return showSuggestedFees()
   }
 }
 
