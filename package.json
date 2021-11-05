@@ -20,6 +20,7 @@
   "author": "Greg Kapka (greg@oraclize.it)",
   "license": "MIT",
   "dependencies": {
+    "@nomiclabs/hardhat-etherscan": "^2.1.7",
     "@openzeppelin/contracts": "^4.2.0",
     "@openzeppelin/contracts-upgradeable": "^4.3.2",
     "@openzeppelin/test-helpers": "^0.5.6",
