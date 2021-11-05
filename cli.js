@@ -3,12 +3,14 @@
 require('dotenv').config()
 const { docopt } = require('docopt')
 const { version } = require('./package.json')
+const { deployVault } = require('./lib/deploy-vault')
 const { flattenContract } = require('./lib/flatten-contract')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
 
 const HELP_ARG = '--help'
+const TOOL_NAME = 'cli.js'
 const VERSION_ARG = '--version'
-const TOOL_NAME = 'vault-cli.js'
+const DEPLOY_VAULT_CMD = 'deployVault'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 
@@ -30,11 +32,13 @@ const USAGE_INFO = `
 ❍ Usage:
   ${TOOL_NAME} ${HELP_ARG}
   ${TOOL_NAME} ${VERSION_ARG}
+  ${TOOL_NAME} ${DEPLOY_VAULT_CMD}
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
 
 ❍ Commands:
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
+  ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
 
 ❍ Options:
@@ -47,6 +51,8 @@ const main = _ => {
     return flattenContract()
   } else if (CLI_ARGS[SHOW_SUGGESTED_FEES_CMD]) {
     return showSuggestedFees()
+  } else if (CLI_ARGS[DEPLOY_VAULT_CMD]) {
+    return deployVault()
   }
 }
 
