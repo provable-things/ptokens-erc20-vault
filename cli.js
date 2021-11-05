@@ -2,6 +2,7 @@
 
 require('dotenv').config()
 const { docopt } = require('docopt')
+const { pegIn } = require('./lib/peg-in')
 const { version } = require('./package.json')
 const { setPNetwork } = require('./lib/set-pnetwork')
 const { getPNetwork } = require('./lib/get-pnetwork')
@@ -17,6 +18,8 @@ const { showExistingContractAddresses } = require('./lib/show-existing-contract-
 
 const HELP_ARG = '--help'
 const TOOL_NAME = 'cli.js'
+const PEG_IN_CMD = 'pegIn'
+const AMOUNT_ARG = '<amount>'
 const VERSION_ARG = '--version'
 const NETWORK_ARG = '<network>'
 const ETH_ADDRESS_ARG = '<ethAddress>'
@@ -26,13 +29,17 @@ const SET_PNETWORK_CMD = 'setPNetwork'
 const GET_PNETWORK_CMD = 'getPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
 const GET_WETH_ADDRESS = 'getWEthAddress'
+const TOKEN_ADDRESS_ARG = '<tokenAddress>'
+const USER_DATA_OPTIONAL_ARG = '--userData'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
 const TOKENS_TO_SUPPORT_ARG = '<tokensToSupport>'
 const IS_TOKEN_SUPPORTED_CMD = 'isTokenSupported'
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
+const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
 const GET_ENCODED_INIT_ARGS_CMD = 'getEncodedInitArgs'
+const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
 const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
 
 const USAGE_INFO = `
@@ -68,12 +75,14 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${IS_TOKEN_SUPPORTED_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${TOKENS_TO_SUPPORT_ARG}...
+  ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${USER_DATA_ARG}
 
 ❍ Commands:
   ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
+  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG}.
   ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
@@ -86,7 +95,11 @@ const USAGE_INFO = `
   ${HELP_ARG}                ❍ Show this message.
   ${VERSION_ARG}             ❍ Show tool version.
   ${ETH_ADDRESS_ARG}          ❍ A valid ETH address.
+  ${TOKEN_ADDRESS_ARG}        ❍ ETH address of token.
   ${DEPLOYED_ADDRESS_ARG}     ❍ The ETH address of the deployed vault.
+  ${DESTINATION_ADDRESS_ARG}  ❍ Destination address of a token peg in.
+  ${USER_DATA_ARG}      ❍ User data in hex format [default: 0x].
+  ${AMOUNT_ARG}              ❍ Amount of tokens in their most granular format.
   ${TOKENS_TO_SUPPORT_ARG}     ❍ Addresses of ERC20 tokens the vault will support.
   ${WETH_ADDRESS_ARG}         ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
   ${NETWORK_ARG}             ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
@@ -115,6 +128,14 @@ const main = _ => {
     return getWEthAddress(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
   else if (CLI_ARGS[IS_TOKEN_SUPPORTED_CMD])
     return isTokenSupported(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
+  else if (CLI_ARGS[PEG_IN_CMD])
+    return pegIn(
+      CLI_ARGS[DEPLOYED_ADDRESS_ARG],
+      CLI_ARGS[AMOUNT_ARG],
+      CLI_ARGS[TOKEN_ADDRESS_ARG],
+      CLI_ARGS[DESTINATION_ADDRESS_ARG],
+      CLI_ARGS[USER_DATA_OPTIONAL_ARG],
+    )
 }
 
 main().catch(_err => console.error('✘', _err.message))
