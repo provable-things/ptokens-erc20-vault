@@ -87,7 +87,8 @@ module.exports = {
       allow: [
         "warn",
         "error",
-        "info"
+        "info",
+        "table",
       ]
     }],
     'no-warning-comments': [1, {
