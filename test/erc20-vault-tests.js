@@ -334,7 +334,7 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
   })
 
   describe('ERC777 Peg In Tests', () => {
-    it('Automatically peg in on ERC777 send', async () => {
+    it('Should automatically peg in on ERC777 send', async () => {
       const eventABI = find(x => x.name === 'PegIn' && x.type === 'event', VaultArtifact.abi)
       const eventSignature = web3.eth.abi.encodeEventSignature(eventABI)
       const erc777 = await deployNonUpgradeableContract(web3, Erc777Artifact, [{ from: TOKEN_HOLDER_ADDRESS }])
@@ -353,7 +353,7 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
       assert.strictEqual(decoded._destinationAddress, DESTINATION_ADDRESS, '_destinationAddress')
     })
 
-    it('Should peg in an ERC777', async () => {
+    it('Should peg in an ERC777 token', async () => {
       const erc777 = await deployNonUpgradeableContract(web3, Erc777Artifact, [{ from: TOKEN_HOLDER_ADDRESS }])
       await VAULT_METHODS.addSupportedToken(erc777.options.address, { from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
       await erc777.methods.approve(VAULT_ADDRESS, TOKEN_AMOUNT).send({ from: TOKEN_HOLDER_ADDRESS })
@@ -486,213 +486,231 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
   })
 
   describe('wETH Tests', () => {
-    it('Should peg in wETH', async () => {
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const tx = await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        EMPTY_USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      assertPegInEvent(
-        await getPegInEventFromTx(tx),
-        WETH_ADDRESS,
-        TOKEN_HOLDER_ADDRESS,
-        TOKEN_AMOUNT,
-        DESTINATION_ADDRESS
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), TOKEN_AMOUNT.toString())
-      assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+    describe('Peg In wETH Tests', () => {
+      it('Should peg in wETH', async () => {
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const tx = await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        assertPegInEvent(
+          await getPegInEventFromTx(tx),
+          WETH_ADDRESS,
+          TOKEN_HOLDER_ADDRESS,
+          TOKEN_AMOUNT,
+          DESTINATION_ADDRESS
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), TOKEN_AMOUNT.toString())
+        assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+      })
+
+      it('Should peg in wETH with user data', async () => {
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const tx = await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        assertPegInEvent(
+          await getPegInEventFromTx(tx),
+          WETH_ADDRESS,
+          TOKEN_HOLDER_ADDRESS,
+          TOKEN_AMOUNT,
+          DESTINATION_ADDRESS,
+          USER_DATA
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), TOKEN_AMOUNT.toString())
+        assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+      })
     })
 
-    it.skip('Should peg out wETH without user data', async () => {
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        EMPTY_USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
-      await pegOut(
-        VAULT_METHODS,
-        TOKEN_HOLDER_ADDRESS,
-        WETH_ADDRESS,
-        TOKEN_AMOUNT,
-        PNETWORK_ADDRESS,
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS), '0')
-      assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
-      const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
-      assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
-    })
-
-    it.skip('Should peg out wETH with user data', async () => {
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        EMPTY_USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
-      await pegOut(
-        VAULT_METHODS,
-        TOKEN_HOLDER_ADDRESS,
-        WETH_ADDRESS,
-        TOKEN_AMOUNT,
-        PNETWORK_ADDRESS,
-        USER_DATA,
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS), '0')
-      assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'Vault\'s ETH balance must be 0!')
-      const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
-      assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
-    })
-
-    it('Should peg in wETH with user data', async () => {
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const tx = await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      assertPegInEvent(
-        await getPegInEventFromTx(tx),
-        WETH_ADDRESS,
-        TOKEN_HOLDER_ADDRESS,
-        TOKEN_AMOUNT,
-        DESTINATION_ADDRESS,
-        USER_DATA
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), TOKEN_AMOUNT.toString())
-      assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
-    })
-
-    it.skip('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
-      const PEG_OUT_GAS_LIMIT = 450e3
-      const expensiveFallbackContract = await deployNonUpgradeableContract(
-        web3,
-        ContractWithCostlyFallbackFxnArtifact
-      )
-      const expensiveFallbackContractAddress = expensiveFallbackContract._address
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
-      assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
-      await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        EMPTY_USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      await pegOut(
-        VAULT_METHODS,
-        expensiveFallbackContractAddress,
-        WETH_ADDRESS,
-        TOKEN_AMOUNT,
-        PNETWORK_ADDRESS,
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
-      const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
-      assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
-      const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
-      assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
-    })
-
-    it.skip('Should be able to peg out wETH with user data to a smart-contract', async () => {
-      const userData = '0xdecaff'
-      const PEG_OUT_GAS_LIMIT = 450e3
-      const expensiveFallbackContract = await deployNonUpgradeableContract(
-        web3,
-        ContractWithCostlyFallbackFxnArtifact
-      )
-      const expensiveFallbackContractAddress = expensiveFallbackContract._address
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
-      assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
-      await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT },
-      )
-      await pegOut(
-        VAULT_METHODS,
-        expensiveFallbackContractAddress,
-        WETH_ADDRESS,
-        TOKEN_AMOUNT,
-        userData,
-      )
-        .send({ from: PNETWORK_ADDRESS, gas: PEG_OUT_GAS_LIMIT })
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS), '0')
-      const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
-      assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
-      const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
-      assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
-      const fallbackContractEvents = await expensiveFallbackContract.getPastEvents('allEvents')
-      assert.strictEqual(fallbackContractEvents.length, 1)
-      const fallbackEventData = fallbackContractEvents[0].raw.data
-      const WORD_SIZE_IN_HEX_CHARS = 64
-      const HEX_PREFIX_LENGTH = 2
-      const amountFromEvent = parseInt(
-        `0x${fallbackEventData.slice(HEX_PREFIX_LENGTH, WORD_SIZE_IN_HEX_CHARS + HEX_PREFIX_LENGTH)}`,
-      )
-      assert.strictEqual(amountFromEvent, TOKEN_AMOUNT)
-      const dataFromEevent = fallbackEventData
-        .slice(-WORD_SIZE_IN_HEX_CHARS).slice(0, userData.length - HEX_PREFIX_LENGTH)
-      assert.strictEqual(`0x${dataFromEevent}`, userData)
-    })
-
-    it.skip('Should not fail to peg out wETH with user data to an EOA', async () => {
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const userData = '0xdecaff'
-      await VAULT_METHODS.pegInEth(DESTINATION_ADDRESS, { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT })
-      const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
-      await VAULT_METHODS
-        .pegOut(TOKEN_HOLDER_ADDRESS, WETH_ADDRESS, TOKEN_AMOUNT, userData)
-        .send({ from: PNETWORK_ADDRESS })
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS), '0')
-      assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
-      const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
-      assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
-    })
-
-    it.skip('Pegging out wETH Should not be susceptible to re-entrancy attack', async () => {
-      const calldata = web3.eth.abi.encodeFunctionCall({
-        name: 'attempReEntrancyAttack',
-        type: 'function',
-        inputs: [],
-      }, [])
-      const PEG_OUT_GAS_LIMIT = 450e3
-      const reEntrancyAttackContract = await deployNonUpgradeableContract(
-        web3,
-        artifacts.require('ContractWithReEntrancyAttack')
-      )
-      const reEntrancyAttackContractAddress = reEntrancyAttackContract._address
-      await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
-      const reEntrancyAttackContractEthBalanceBeforePegout = await web3
-        .eth
-        .getBalance(reEntrancyAttackContractAddress)
-      assert.strictEqual(reEntrancyAttackContractEthBalanceBeforePegout, '0')
-      await VAULT_METHODS.pegInEth(
-        DESTINATION_ADDRESS,
-        EMPTY_USER_DATA,
-        { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
-      )
-      const expectedError = 'ETH transfer failed when pegging out wETH!'
-      await expectRevert(
-        pegOut(
+    describe('Peg Out wETH Tests', () => {
+      it('Should peg out wETH without user data', async () => {
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+        await pegOut(
           VAULT_METHODS,
-          reEntrancyAttackContractAddress,
+          TOKEN_HOLDER_ADDRESS,
           WETH_ADDRESS,
           TOKEN_AMOUNT,
-          calldata,
           PNETWORK_ADDRESS,
-        ),
-        expectedError
-      )
-      assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS), `${TOKEN_AMOUNT}`)
-      const attackContractBalanceAfter = await web3
-        .eth
-        .getBalance(reEntrancyAttackContractAddress)
-      assert.strictEqual(attackContractBalanceAfter, '0')
-      const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
-      assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+        assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+        const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+        assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+      })
+
+      it('Should peg out wETH with user data', async () => {
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+        await pegOut(
+          VAULT_METHODS,
+          TOKEN_HOLDER_ADDRESS,
+          WETH_ADDRESS,
+          TOKEN_AMOUNT,
+          PNETWORK_ADDRESS,
+          USER_DATA,
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+        assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'Vault\'s ETH balance must be 0!')
+        const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+        assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+      })
+
+      it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
+        const PEG_OUT_GAS_LIMIT = 450e3
+        const expensiveFallbackContract = await deployNonUpgradeableContract(
+          web3,
+          ContractWithCostlyFallbackFxnArtifact
+        )
+        const expensiveFallbackContractAddress = expensiveFallbackContract._address
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+        assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        await pegOut(
+          VAULT_METHODS,
+          expensiveFallbackContractAddress,
+          WETH_ADDRESS,
+          TOKEN_AMOUNT,
+          PNETWORK_ADDRESS,
+          EMPTY_USER_DATA,
+          PEG_OUT_GAS_LIMIT,
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+        const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+        assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
+        const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+        assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
+      })
+
+      it('Should be able to peg out wETH with user data to a smart-contract', async () => {
+        const userData = '0xdecaff'
+        const PEG_OUT_GAS_LIMIT = 450e3
+        const expensiveFallbackContract = await deployNonUpgradeableContract(
+          web3,
+          ContractWithCostlyFallbackFxnArtifact
+        )
+        const expensiveFallbackContractAddress = expensiveFallbackContract._address
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const expensiveContractEthBalanceBeforePegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+        assert.strictEqual(expensiveContractEthBalanceBeforePegout, '0')
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT },
+        )
+        await pegOut(
+          VAULT_METHODS,
+          expensiveFallbackContractAddress,
+          WETH_ADDRESS,
+          TOKEN_AMOUNT,
+          PNETWORK_ADDRESS,
+          userData,
+          PEG_OUT_GAS_LIMIT,
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+        const expensiveContractEthBalanceAfterPegout = await web3.eth.getBalance(expensiveFallbackContractAddress)
+        assert.strictEqual(expensiveContractEthBalanceAfterPegout, `${TOKEN_AMOUNT}`)
+        const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+        assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
+        const fallbackContractEvents = await expensiveFallbackContract.getPastEvents('allEvents')
+        assert.strictEqual(fallbackContractEvents.length, 1)
+        const fallbackEventData = fallbackContractEvents[0].raw.data
+        const WORD_SIZE_IN_HEX_CHARS = 64
+        const HEX_PREFIX_LENGTH = 2
+        const amountFromEvent = parseInt(
+          `0x${fallbackEventData.slice(HEX_PREFIX_LENGTH, WORD_SIZE_IN_HEX_CHARS + HEX_PREFIX_LENGTH)}`,
+        )
+        assert.strictEqual(amountFromEvent, TOKEN_AMOUNT)
+        const dataFromEevent = fallbackEventData
+          .slice(-WORD_SIZE_IN_HEX_CHARS)
+          .slice(0, userData.length - HEX_PREFIX_LENGTH)
+        assert.strictEqual(`0x${dataFromEevent}`, userData)
+      })
+
+      it('Should not fail to peg out wETH with user data to an EOA', async () => {
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const userData = '0xdecaff'
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        const ethBalanceBefore = await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS)
+        await pegOut(
+          VAULT_METHODS,
+          TOKEN_HOLDER_ADDRESS,
+          WETH_ADDRESS,
+          TOKEN_AMOUNT,
+          PNETWORK_ADDRESS,
+          userData,
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), '0')
+        assert.strictEqual(await web3.eth.getBalance(VAULT_ADDRESS), '0', 'eth balance must be 0')
+        const expectedEthBalance = web3.utils.toBN(ethBalanceBefore).add(web3.utils.toBN(TOKEN_AMOUNT)).toString()
+        assert.strictEqual(await web3.eth.getBalance(TOKEN_HOLDER_ADDRESS), expectedEthBalance)
+      })
+
+      it('Pegging out wETH Should not be susceptible to re-entrancy attack', async () => {
+        const calldata = web3.eth.abi.encodeFunctionCall({
+          name: 'attempReEntrancyAttack',
+          type: 'function',
+          inputs: [],
+        }, [])
+        const PEG_OUT_GAS_LIMIT = 450e3
+        const reEntrancyAttackContract = await deployNonUpgradeableContract(
+          web3,
+          artifacts.require('ContractWithReEntrancyAttack')
+        )
+        const reEntrancyAttackContractAddress = reEntrancyAttackContract._address
+        await addTokenSupport(VAULT_METHODS, WETH_ADDRESS, PNETWORK_ADDRESS)
+        const reEntrancyAttackContractEthBalanceBeforePegout = await web3
+          .eth
+          .getBalance(reEntrancyAttackContractAddress)
+        assert.strictEqual(reEntrancyAttackContractEthBalanceBeforePegout, '0')
+        await VAULT_METHODS.pegInEth(
+          DESTINATION_ADDRESS,
+          EMPTY_USER_DATA,
+          { from: TOKEN_HOLDER_ADDRESS, value: TOKEN_AMOUNT }
+        )
+        const expectedError = 'ETH transfer failed when pegging out wETH!'
+        await expectRevert(
+          pegOut(
+            VAULT_METHODS,
+            reEntrancyAttackContractAddress,
+            WETH_ADDRESS,
+            TOKEN_AMOUNT,
+            PNETWORK_ADDRESS,
+            calldata,
+            PEG_OUT_GAS_LIMIT,
+          ),
+          expectedError,
+        )
+        assert.strictEqual(await WETH_CONTRACT.methods.balanceOf(VAULT_ADDRESS).call(), `${TOKEN_AMOUNT}`)
+        const attackContractBalanceAfter = await web3
+          .eth
+          .getBalance(reEntrancyAttackContractAddress)
+        assert.strictEqual(attackContractBalanceAfter, '0')
+        const vaultEthBalanceAfterPegOut = await web3.eth.getBalance(VAULT_ADDRESS)
+        assert.strictEqual(vaultEthBalanceAfterPegOut, '0', 'Vault\'s ETH balance after peg out must be 0!')
+      })
     })
   })
 })
