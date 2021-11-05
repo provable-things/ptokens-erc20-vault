@@ -7,6 +7,7 @@ const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { flattenContract } = require('./lib/flatten-contract')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
+const { showExistingContractAddresses } = require('./lib/show-existing-contract-addresses')
 
 const HELP_ARG = '--help'
 const TOOL_NAME = 'cli.js'
@@ -17,6 +18,7 @@ const VERIFY_VAULT_CMD = 'verifyVault'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
+const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
 
 const USAGE_INFO = `
 ❍ pTokens ERC20 Vault CLI ❍
@@ -43,13 +45,15 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${DEPLOY_VAULT_CMD}
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
+  ${TOOL_NAME} ${SHOW_EXISTING_CONTRACTS_CMD}
   ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
 
 ❍ Commands:
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
-  ${VERIFY_VAULT_CMD}          ❍ Verify a deployed pToken logic contract.
+  ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
+  ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
 
 ❍ Options:
   ${HELP_ARG}                ❍ Show this message.
@@ -67,6 +71,8 @@ const main = _ => {
     return deployVault()
   } else if (CLI_ARGS[VERIFY_VAULT_CMD]) {
     return verifyVault(CLI_ARGS[NETWORK_ARG], CLI_ARGS[DEPLOYED_ADDRESS_ARG])
+  } else if (CLI_ARGS[SHOW_EXISTING_CONTRACTS_CMD]) {
+    return showExistingContractAddresses()
   }
 }
 
