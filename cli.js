@@ -11,6 +11,7 @@ const { verifyVault } = require('./lib/verify-vault')
 const { getWEthAddress } = require('./lib/get-weth-address')
 const { flattenContract } = require('./lib/flatten-contract')
 const { isTokenSupported } = require('./lib/is-token-supported')
+const { showWalletDetails} = require('./lib/show-wallet-details')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
 const { getSupportedTokens } = require('./lib/get-supported-tokens')
 const { getEncodedInitArgs } = require('./lib/get-encoded-init-args')
@@ -36,6 +37,7 @@ const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
 const TOKENS_TO_SUPPORT_ARG = '<tokensToSupport>'
 const IS_TOKEN_SUPPORTED_CMD = 'isTokenSupported'
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
+const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
 const GET_ENCODED_INIT_ARGS_CMD = 'getEncodedInitArgs'
@@ -43,7 +45,7 @@ const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
 const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
 
 const USAGE_INFO = `
-❍ pTokens ERC20 Vault CLI ❍
+❍ pTokens ERC20 Vault Command Line Interface
 
   Copyright Provable Things 2021
   Questions: greg@oraclize.it
@@ -67,6 +69,7 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${DEPLOY_VAULT_CMD}
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
+  ${TOOL_NAME} ${SHOW_WALLET_DETAILS_CMD}
   ${TOOL_NAME} ${SHOW_EXISTING_CONTRACTS_CMD}
   ${TOOL_NAME} ${GET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_WETH_ADDRESS} ${DEPLOYED_ADDRESS_ARG}
@@ -87,6 +90,7 @@ const USAGE_INFO = `
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
   ${GET_SUPPORTED_TOKENS_CMD}    ❍ Show list of tokens supprted by the vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${SHOW_WALLET_DETAILS_CMD}     ❍ Decrypts the private key and shows address & balance information.
   ${IS_TOKEN_SUPPORTED_CMD}      ❍ Is token at ${ETH_ADDRESS_ARG} supported in vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_ENCODED_INIT_ARGS_CMD}    ❍ Calculate the initializer function arguments in ABI encoded format.
   ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
@@ -128,6 +132,8 @@ const main = _ => {
     return getWEthAddress(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
   else if (CLI_ARGS[IS_TOKEN_SUPPORTED_CMD])
     return isTokenSupported(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
+  else if (CLI_ARGS[SHOW_WALLET_DETAILS_CMD])
+    return showWalletDetails()
   else if (CLI_ARGS[PEG_IN_CMD])
     return pegIn(
       CLI_ARGS[DEPLOYED_ADDRESS_ARG],
