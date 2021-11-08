@@ -55,7 +55,8 @@ const USAGE_INFO = `
   A tool to aid with deployments of & interactions with the upgradeable pToken ERC20 vault logic contract.
 
   NOTE: Functions that make transactions require a private key. Please provide a GPG encrpyted file called
-   'private-key.gpg' containing your key in the root of the repository.
+    'private-key.gpg' containing your key in the root of the repository. Create one via:
+    'echo <your-private-key> | gpg -c --output private-key.gpg'
 
   NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
     ENDPOINT=<rpc-endpoint-for-blochain-to-interact-with>
