@@ -52,13 +52,13 @@ const USAGE_INFO = `
 
   A tool to aid with deployments of & interactions with the upgradeable pToken ERC20 vault logic contract.
 
-  NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
+  NOTE: Functions that make transactions require a private key. Please provide a GPG encrpyted file called
+   'private-key.gpg' containing your key in the root of the repository.
 
-    PRIVATE_KEY=<private-key-to-sign-transactions-with>
+  NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
     ENDPOINT=<rpc-endpoint-for-blochain-to-interact-with>
 
   NOTE: To call the '${VERIFY_VAULT_CMD}' function, the following extra environment variable is required:
-
     ETHERSCAN_API_KEY=<api-key-for-automated-contract-verifications>
 
 ❍ Usage:
