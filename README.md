@@ -1,79 +1,141 @@
 # :page_with_curl: Provable pToken ERC20 Vault Smart-Contract
 
-The __ETH__ smart-contract for the Provable __`ERC20 Token`__ Vault! This vault is used for bridges _from_ EVM-compliant chains, and via it we can bridge ALL compliant tokens via a single smart-contract.
+This repo houses the upgradeable ERC20-Vault logic smart-contract, as well as a simple CLI to help with deployment, verification & interacting with it.
 
 &nbsp;
 
-## :boom: Deployment Guide
+## :boom: Usage Guide:
 
 After cloning the repository, first install the dependencies:
 
 ```
-❍ npm i
+> npm ci
 ```
 
-Next, you need to fill in the the following information in the __`config.json`__:
-
- - __`ENDPOINT`__ An endpoint for the network you intend to deploy on.
- - __`GAS_PRICE`__ The gas price you intend to deploy the contracts with.
- - __`PRIVATE_KEY`__ A private key for an account adequately funded for the deployment.
- - __`WETH_ADDRESS`__ The address of the wrapped ETH token (or equivalent) for the network you're deploying on.
- - __`TOKENS_TO_SUPPORT`__ An array of ETH token address to support the bridging of. Leave the array empty if no tokens are to bridged initially.
- - __`ETHERSCAN_API_KEY`__ An __[etherscan](etherscan.io)__ API key, for use when verifying the contract.
-
-Once the __`config.json`__ is filled in correctly, it'll look something like the following:
+Then, to see the usage guide, run:
 
 ```
-{
-  "GAS_PRICE": 10e9,
-  "TOKENS_TO_SUPPORT": [
-    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc1"
-  ],
-  "ETHERSCAN_API_KEY": "51M7KKS9R5CZ2KRPHM1IA87P2W9UP5PGHQ",
-  "WETH_ADDRESS": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-  "PRIVATE_KEY": "2b18efff601d68188bf41da2f57a90c5f0250d4ebfbee5d13f262f0ef84c842a",
-  "ENDPOINT": "https://aged-blue-field.rinkeby.quiknode.pro/4ebfbee5d13f262f0ef84c842f/",
-}
+> ./cli.js --help
 ```
 
-Finally, deploy the vault to your chose network via the command:
+Output:
 
 ```
-❍ npx truffle migrate --network <network> --reset
-```
 
-Currently, there exists in the __`./truffle-config.js`__ configurations for the following __`<network>s`__
+❍ pTokens ERC20 Vault Command Line Interface
 
-```
-xDai
-rinkeby
-ropsten
-ethMainnet
-bscMainnet
-bscTestnet
-polygonMaticMainnet
-```
+  Copyright Provable Things 2021
+  Questions: greg@oraclize.it
 
-Should you need to deploy to a different chain, inspect the existing configurations and make your own with values pertinent to that new chain.
+❍ Info:
 
-Finally, to verify the deployed contract run:
+  A tool to aid with deployments of & interactions with the upgradeable pToken ERC20 vault logic contract.
 
-```
-❍ npx truffle run verify Erc20Vault --network <network>
+  NOTE: Functions that make transactions require a private key. Please provide a GPG encrpyted file called
+   'private-key.gpg' containing your key in the root of the repository.
+
+  NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
+    ENDPOINT=<rpc-endpoint-for-blochain-to-interact-with>
+
+  NOTE: To call the 'verifyVault' function, the following extra environment variable is required:
+    ETHERSCAN_API_KEY=<api-key-for-automated-contract-verifications>
+
+❍ Usage:
+  cli.js --help
+  cli.js --version
+  cli.js deployVault
+  cli.js flattenContract
+  cli.js showSuggestedFees
+  cli.js showWalletDetails
+  cli.js showExistingContracts
+  cli.js getPNetwork <deployedAddress>
+  cli.js getWEthAddress <deployedAddress>
+  cli.js getSupportedTokens <deployedAddress>
+  cli.js verifyVault <network> <deployedAddress>
+  cli.js setPNetwork <deployedAddress> <ethAddress>
+  cli.js isTokenSupported <deployedAddress> <ethAddress>
+  cli.js getEncodedInitArgs <wEthAddress> <tokensToSupport>...
+  cli.js pegIn <deployedAddress> <amount> <tokenAddress> <destinationAddress> --userData=<hex>
+
+❍ Commands:
+  setPNetwork           ❍ Set the pNetwork address.
+  showSuggestedFees     ❍ Show 'ethers.js' suggested fees.
+  deployVault           ❍ Deploy the ERC20 vault logic contract.
+  verifyVault           ❍ Verify a deployed pToken logic contract.
+  pegIn                 ❍ Peg in <amount> of <tokenAddress> to <destinationAddress>.
+  getPNetwork           ❍ Show the pNetwork address of the vault at <deployedAddress>.
+  getWEthAddress        ❍ Show the wETH address set in the vault at <deployedAddress>.
+  flattenContract       ❍ Flatten the contract in case manual verification is required.
+  getSupportedTokens    ❍ Show list of tokens supprted by the vault at <deployedAddress>.
+  showWalletDetails     ❍ Decrypts the private key and shows address & balance information.
+  isTokenSupported      ❍ Is token at <ethAddress> supported in vault at <deployedAddress>.
+  getEncodedInitArgs    ❍ Calculate the initializer function arguments in ABI encoded format.
+  showExistingContracts ❍ Show list of existing logic contract addresses on various blockchains.
+
+❍ Options:
+  --help                ❍ Show this message.
+  --version             ❍ Show tool version.
+  <ethAddress>          ❍ A valid ETH address.
+  <tokenAddress>        ❍ ETH address of token.
+  <deployedAddress>     ❍ The ETH address of the deployed vault.
+  <destinationAddress>  ❍ Destination address of a token peg in.
+  --userData=<hex>      ❍ User data in hex format [default: 0x].
+  <amount>              ❍ Amount of tokens in their most granular format.
+  <tokensToSupport>     ❍ Addresses of ERC20 tokens the vault will support.
+  <wEthAddress>         ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
+  <network>             ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
+
 ```
 
 &nbsp;
 
-## :guardsman: Smart-Contract Tests:
+### :radioactive: Secrets:
 
-After filling in the __`config.json`__ per the information above, to run the tests first start truffle:
+This tool requires a private key in order to sign transactions. GPG is used to protect the private key. To encrypt a private key using a GPG key from your keyring:
 
 ```
-❍ pnpx truffle develop
+echo <your-private-key> | gpg -e --output private-key.gpg
 ```
 
-Then Run the tests via:
+Or, if you'd rather use a password to encrypt your keyfile, use this instead:
+
+```
+echo <your-private-key> | gpg -c --output private-key.gpg
+```
+
+The CLI also requires a JsonRPC endpoint for the blockchain you're interacting with. To easily provision this, create a `.env` file in the root of the repository and fill it in thusly:
+
+```
+ENDPOINT=<ethRpcEndpoint>
+```
+
+Finally, to verify a contract, you'll need an etherscan API key too. You can add this to your `.env` file thusly:
+
+```
+ETHERSCAN_API_KEY=<apikey>
+```
+
+NOTE: If you're not verifying contracts, you don't need to provide this environment variable at all.
+
+&nbsp;
+
+### :black_nib: Notes:
+
+ - To simplify deployments, the tool uses __`ethers.js`__ suggested fees for deployment. The CLI function __`showSuggestedFees`__ will show you the currently suggested fees, including __[EIP1559](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1559.md)__ specific values if the chain you're working with is EIP1559 compaible.
+
+ - In case the chain you're deploying to does not have etherscan-style contract verification which works with the hardhat plugin, there exists the __`flattenContract`__ command. This will flatten the __`pToken`__ contract into a single __`.sol`__ file that can then be used for manual verification.
+
+&nbsp;
+
+### :guardsman: Smart-Contract Tests:
+
+1) Start truffle via:
+
+```
+❍ npx truffle develop
+```
+
+2) Run the tests via:
 
 ```
 ❍ truffle_develop> test
@@ -82,41 +144,51 @@ Then Run the tests via:
 Test output:
 
 ```
+  Contract: Erc20Vault Tests
+    Constructor Tests
+      ✓ Token addresses sent to constructor should be supported (573ms)
+    Ownership Tests
+      ✓ PNETWORK_ADDRESS can change PNETWORK_ADDRESS (122ms)
+      ✓ NON_PNETWORK_ADDRESS cannot change PNETWORK_ADDRESS (938ms)
+      ✓ Should not be able to set pNetwork address to the zero address (131ms)
+    Token Approval Tests
+      ✓ PNETWORK_ADDRESS can add appoved token address (114ms)
+      ✓ NON_PNETWORK_ADDRESS cannot add appoved token address (199ms)
+      ✓ PNETWORK_ADDRESS can remove appoved token address (178ms)
+      ✓ NON_PNETWORK_ADDRESS cannot remove appoved token address (207ms)
+    Peg In Tests
+      ✓ Should NOT peg in if token is not supported (127ms)
+      ✓ Should NOT peg in if token is supported but insufficient allowance approved (227ms)
+      ✓ Should NOT peg in supported token if sufficient allowance approved, but token amount is 0 (217ms)
+      ✓ Should peg in if token is supported and sufficient allowance approved (300ms)
+      ✓ Should peg in with user data (297ms)
+    ERC777 Peg In Tests
+      ✓ Should automatically peg in on ERC777 send (640ms)
+      ✓ Should peg in an ERC777 token (484ms)
+    Peg Out Tests
+      ✓ NON_PNETWORK_ADDRESS cannot peg out (370ms)
+      ✓ PNETWORK_ADDRESS cannot peg out if insufficient balance (167ms)
+      ✓ PNETWORK_ADDRESS can peg out with sufficient balance (412ms)
+      ✓ Can peg out with user data (1029ms)
+    wETH Tests
+      Peg In wETH Tests
+        ✓ Should peg in wETH (315ms)
+        ✓ Should peg in wETH with user data (349ms)
+      Peg Out wETH Tests
+        ✓ Should peg out wETH without user data (424ms)
+        ✓ Should peg out wETH with user data (464ms)
+        ✓ Should peg out wETH to smart-contract w/ expensive fallback function (571ms)
+        ✓ Should be able to peg out wETH with user data to a smart-contract (569ms)
+        ✓ Should not fail to peg out wETH with user data to an EOA (324ms)
+        ✓ Pegging out wETH Should not be susceptible to re-entrancy attack (909ms)
 
-  Contract: Erc20Vault
-    ✓ PNETWORK_ADDRESS can add appoved token address (188ms)
-    ✓ NON_PNETWORK_ADDRESS cannot add appoved token address (176ms)
-    ✓ PNETWORK_ADDRESS can remove appoved token address (278ms)
-    ✓ NON_PNETWORK_ADDRESS cannot remove appoved token address (279ms)
-    ✓ Should NOT peg in if token is not supported (98ms)
-    ✓ Should NOT peg in if token is supported but insufficient allowance approved (234ms)
-    ✓ Should NOT peg in if token is supported and sufficient allowance approved, but token amount is 0 (206ms)
-    ✓ Should peg in if token is supported and sufficient allowance approved (459ms)
-    ✓ NON_PNETWORK_ADDRESS cannot peg out (374ms)
-    ✓ PNETWORK_ADDRESS cannot peg out if insufficient balance (154ms)
-    ✓ PNETWORK_ADDRESS can peg out with sufficient balance (503ms)
-    ✓ PNETWORK_ADDRESS can migrate (842ms)
-    ✓ Non PNETWORK_ADDRESS cannot migrate (91ms)
-    ✓ Token addresses sent to constructor should be supported (356ms)
-    ✓ PNETWORK_ADDRESS can migrate single (648ms)
-    ✓ Non PNETWORK_ADDRESS cannot migrateSingle (62ms)
-    ✓ Automatically pegIn on ERC777 send (653ms)
-    ✓ Should pegIn an ERC777 (722ms)
-    ✓ PNETWORK_ADDRESS can migrate with ERC777 (1023ms)
-    ✓ Should peg in wETH (278ms)
-    ✓ Should peg out wETH (428ms)
-    ✓ Should peg in with user data (496ms)
-    ✓ Should peg in WETH_CONTRACT with user data (347ms)
-    ✓ Can peg out with user data (972ms)
-    ✓ Should migrate all token balances (4023ms)
-    ✓ Should peg out wETH to smart-contract w/ expensive fallback function (480ms)
-    ✓ Should be able to peg out wETH with user data to a smart-contract (457ms)
-    ✓ Should not fail to peg out wETH with user data to an EOA (348ms)
-    ✓ PNETWORK_ADDRESS can change PNETWORK_ADDRESS (228ms)
-    ✓ NON_PNETWORK_ADDRESS cannot change PNETWORK_ADDRESS (111ms)
-    ✓ Should not be able to set pNetwork address to the zero address (119ms)
 
-
-  31 passing (41s)
+  27 passing (49s)
 
 ```
+
+&nbsp;
+
+## :white_medium_square: To Do:
+
+[ ] Allow custom gas prices?
