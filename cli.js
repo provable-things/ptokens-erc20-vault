@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+/* eslint-disable max-len */
 
 require('dotenv').config()
 const { docopt } = require('docopt')
@@ -11,7 +12,7 @@ const { verifyVault } = require('./lib/verify-vault')
 const { getWEthAddress } = require('./lib/get-weth-address')
 const { flattenContract } = require('./lib/flatten-contract')
 const { isTokenSupported } = require('./lib/is-token-supported')
-const { showWalletDetails} = require('./lib/show-wallet-details')
+const { showWalletDetails } = require('./lib/show-wallet-details')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
 const { getSupportedTokens } = require('./lib/get-supported-tokens')
 const { getEncodedInitArgs } = require('./lib/get-encoded-init-args')
@@ -111,31 +112,31 @@ const USAGE_INFO = `
 `
 const main = _ => {
   const CLI_ARGS = docopt(USAGE_INFO, { version })
-  if (CLI_ARGS[FLATTEN_CONTRACT_CMD])
+  if (CLI_ARGS[FLATTEN_CONTRACT_CMD]) {
     return flattenContract()
-  else if (CLI_ARGS[SHOW_SUGGESTED_FEES_CMD])
+  } else if (CLI_ARGS[SHOW_SUGGESTED_FEES_CMD]) {
     return showSuggestedFees()
-  else if (CLI_ARGS[DEPLOY_VAULT_CMD])
+  } else if (CLI_ARGS[DEPLOY_VAULT_CMD]) {
     return deployVault()
-  else if (CLI_ARGS[VERIFY_VAULT_CMD])
+  } else if (CLI_ARGS[VERIFY_VAULT_CMD]) {
     return verifyVault(CLI_ARGS[NETWORK_ARG], CLI_ARGS[DEPLOYED_ADDRESS_ARG])
-  else if (CLI_ARGS[SHOW_EXISTING_CONTRACTS_CMD])
+  } else if (CLI_ARGS[SHOW_EXISTING_CONTRACTS_CMD]) {
     return showExistingContractAddresses()
-  else if (CLI_ARGS[GET_ENCODED_INIT_ARGS_CMD])
+  } else if (CLI_ARGS[GET_ENCODED_INIT_ARGS_CMD]) {
     return getEncodedInitArgs(CLI_ARGS[WETH_ADDRESS_ARG], CLI_ARGS[TOKENS_TO_SUPPORT_ARG])
-  else if (CLI_ARGS[SET_PNETWORK_CMD])
+  } else if (CLI_ARGS[SET_PNETWORK_CMD]) {
     return setPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
-  else if (CLI_ARGS[GET_PNETWORK_CMD])
+  } else if (CLI_ARGS[GET_PNETWORK_CMD]) {
     return getPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
-  else if (CLI_ARGS[GET_SUPPORTED_TOKENS_CMD])
+  } else if (CLI_ARGS[GET_SUPPORTED_TOKENS_CMD]) {
     return getSupportedTokens(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
-  else if (CLI_ARGS[GET_WETH_ADDRESS])
+  } else if (CLI_ARGS[GET_WETH_ADDRESS]) {
     return getWEthAddress(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
-  else if (CLI_ARGS[IS_TOKEN_SUPPORTED_CMD])
+  } else if (CLI_ARGS[IS_TOKEN_SUPPORTED_CMD]) {
     return isTokenSupported(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
-  else if (CLI_ARGS[SHOW_WALLET_DETAILS_CMD])
+  } else if (CLI_ARGS[SHOW_WALLET_DETAILS_CMD]) {
     return showWalletDetails()
-  else if (CLI_ARGS[PEG_IN_CMD])
+  } else if (CLI_ARGS[PEG_IN_CMD]) {
     return pegIn(
       CLI_ARGS[DEPLOYED_ADDRESS_ARG],
       CLI_ARGS[AMOUNT_ARG],
@@ -143,6 +144,7 @@ const main = _ => {
       CLI_ARGS[DESTINATION_ADDRESS_ARG],
       CLI_ARGS[USER_DATA_OPTIONAL_ARG],
     )
+  }
 }
 
 main().catch(_err => console.error('✘', _err.message))
