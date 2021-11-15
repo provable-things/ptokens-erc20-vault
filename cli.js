@@ -10,7 +10,6 @@ const { getPNetwork } = require('./lib/get-pnetwork')
 const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { getWEthAddress } = require('./lib/get-weth-address')
-const { flattenContract } = require('./lib/flatten-contract')
 const { isTokenSupported } = require('./lib/is-token-supported')
 const { showWalletDetails } = require('./lib/show-wallet-details')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
@@ -113,7 +112,9 @@ const USAGE_INFO = `
 const main = _ => {
   const CLI_ARGS = docopt(USAGE_INFO, { version })
   if (CLI_ARGS[FLATTEN_CONTRACT_CMD]) {
-    return flattenContract()
+    return Promise.resolve(
+      console.info('✘ `truffle-flattener` does not work w/ `unchecked` code blocks, so we cannot do this yet!')
+    )
   } else if (CLI_ARGS[SHOW_SUGGESTED_FEES_CMD]) {
     return showSuggestedFees()
   } else if (CLI_ARGS[DEPLOY_VAULT_CMD]) {
