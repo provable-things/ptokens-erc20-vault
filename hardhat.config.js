@@ -9,7 +9,10 @@ const {
 } = require('./lib/constants')
 const { assoc } = require('ramda')
 
+require('hardhat-erc1820')
+require('@nomiclabs/hardhat-waffle')
 require('@nomiclabs/hardhat-etherscan')
+require('@openzeppelin/hardhat-upgrades')
 
 const SUPPORTED_NETWORKS = [
   'rinkeby',
@@ -18,11 +21,10 @@ const SUPPORTED_NETWORKS = [
 ]
 
 const getEnvVarOrThow = _name => {
-  if (has(_name, process.env)) {
+  if (has(_name, process.env))
     return prop(_name, process.env)
-  } else {
+  else
     throw new Error(`No '${_name}' env-var found - please provision one!`)
-  }
 }
 
 const getAllSupportedNetworks = _ =>
