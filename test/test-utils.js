@@ -1,69 +1,43 @@
 const {
-  prop,
-  curry,
-} = require('ramda')
+  ADDRESS_PROP,
+  EMPTY_USER_DATA,
+} = require('./test-constants')
 const assert = require('assert')
-const VaultArtifact = artifacts.require('Erc20Vault')
-const { deployProxy } = require('@openzeppelin/truffle-upgrades')
+const { prop } = require('ramda')
 
-const GAS_LIMIT = 3e6
-const EMPTY_USER_DATA = '0x'
-
-const getPegInEventFromTx = _tx =>
+const getPegInEventFromReceipt = _receipt =>
   new Promise((resolve, reject) => {
-    const pegInLogs = _tx.logs.filter(_log => _log.event === 'PegIn')
+    const pegInLogs = _receipt.events.filter(_log => _log.event === 'PegIn')
     return pegInLogs.length === 1
       ? resolve(prop(0, pegInLogs))
       : reject(new Error('Could not get PegIn event from transaction!'))
   })
 
 const pegOut = (
-  _vaultMethods,
+  _vaultContract,
   _tokenHolderAddress,
   _erc20TokenAddress,
   _tokenAmount,
-  _from,
   _userData = EMPTY_USER_DATA,
-  _gasLimit = GAS_LIMIT,
 ) =>
-  _vaultMethods.pegOut(
+  _vaultContract['pegOut(address,address,uint256,bytes)'](
     _tokenHolderAddress,
     _erc20TokenAddress,
     _tokenAmount,
     _userData,
-    { from: _from, gas: _gasLimit }
   )
 
-const deployNonUpgradeableContract = (_web3, _artifact, _constructorParams = []) =>
-  new Promise((resolve, reject) =>
-    _artifact
-      .new(..._constructorParams)
-      .then(({ contract: { _jsonInterface, _address } }) =>
-        resolve(new _web3.eth.Contract(_jsonInterface, _address))
-      )
-      .catch(reject)
-  )
+const getRandomEthAddress = _ => {
+  /* eslint-disable-next-line new-cap */
+  const wallet = new ethers.Wallet.createRandom()
+  return prop(ADDRESS_PROP, wallet)
+}
 
-const deployUpgradeableContract = curry((_artifact, _argsArray) =>
-  deployProxy(_artifact, _argsArray)
-)
+const addTokenSupport = (_vaultContract, _tokenAddress) =>
+  _vaultContract.addSupportedToken(_tokenAddress)
 
-const deployVaultContract = deployUpgradeableContract(VaultArtifact)
-
-const getRandomEthAddress = _web3 =>
-  _web3.utils.randomHex(20)
-
-const addTokenSupport = (_vaultMethods, _tokenAddress, _from, _gasLimit = GAS_LIMIT) =>
-  _vaultMethods.addSupportedToken(_tokenAddress, { from: _from, gas: _gasLimit })
-
-const giveVaultAllowance = (
-  _tokenMethods,
-  _holderAddress,
-  _spenderAddress,
-  _tokenAmount,
-  _gasLimit = GAS_LIMIT
-) =>
-  _tokenMethods.approve(_spenderAddress, _tokenAmount).send({ from: _holderAddress, gas: _gasLimit })
+const giveAllowance = (_tokenContract, _spenderAddress, _tokenAmount) =>
+  _tokenContract.approve(_spenderAddress, _tokenAmount)
 
 const assertPegInEvent = (
   _pegInEvent,
@@ -71,7 +45,7 @@ const assertPegInEvent = (
   _tokenSender,
   _tokenAmount,
   _destinationAddress,
-  _userData = null,
+  _userData = '0x',
 ) => {
   assert.strictEqual(_pegInEvent.args._userData, _userData)
   assert.strictEqual(_pegInEvent.args._tokenSender, _tokenSender)
@@ -80,32 +54,37 @@ const assertPegInEvent = (
   assert.strictEqual(_pegInEvent.args._tokenAmount.toString(), `${_tokenAmount}`)
 }
 
-const pegInWithoutUserData = (
-  _vaultMethods,
-  _tokenAddress,
-  _tokenAmount,
-  _tokenHolder,
-  _destinationAddress,
-  _gasLimit = GAS_LIMIT,
-) =>
-  _vaultMethods.pegIn(
-    _tokenAmount,
-    _tokenAddress,
-    _destinationAddress,
-    { from: _tokenHolder, gas: _gasLimit }
-  )
+const pegInWithoutUserData = (_vaultContract, _tokenAddress, _tokenAmount, _destinationAddress) =>
+  _vaultContract['pegIn(uint256,address,string)'](_tokenAmount, _tokenAddress, _destinationAddress)
 
-const maybeStripHexPrefix = _s => _s.toLowerCase().startsWith('0x') ? _s.slice(2) : _s
+const deployUpgradeableContract = (_contractPath, _deployArgs) =>
+  ethers.getContractFactory(_contractPath).then(_factory => upgrades.deployProxy(_factory, _deployArgs))
+
+const deployNonUpgradeableContract = (_contractPath, _deployArgs = []) =>
+  ethers
+    .getContractFactory(_contractPath)
+    .then(_factory => _factory.deploy(..._deployArgs))
+    .then(_contract => Promise.all([ _contract, _contract.deployTransaction.wait() ]))
+    .then(([ _contract ]) => _contract)
+
+const getEventSignatureFromEventFragment = _eventFragment =>
+  ethers.utils.keccak256(ethers.utils.toUtf8Bytes(`${
+    _eventFragment.name
+  }(${
+    _eventFragment.inputs
+      .map(prop('type'))
+      .reduce((_acc, _type, _i) => `${_acc}${_i === 0 ? '' : ','}${_type}`, '')
+  })`))
 
 module.exports = {
+  getEventSignatureFromEventFragment,
   deployNonUpgradeableContract,
+  deployUpgradeableContract,
+  getPegInEventFromReceipt,
   pegInWithoutUserData,
   getRandomEthAddress,
-  deployVaultContract,
-  getPegInEventFromTx,
-  maybeStripHexPrefix,
-  giveVaultAllowance,
   assertPegInEvent,
   addTokenSupport,
+  giveAllowance,
   pegOut,
 }
