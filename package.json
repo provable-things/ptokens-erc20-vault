@@ -4,7 +4,9 @@
   "description": "The pToken ERC20 vault smart-contract & CLI",
   "main": "cli.js",
   "scripts": {
-    "test": "echo 'Please see README.md for details!'"
+    "test": "npm run tests",
+    "tests": "npx hardhat test",
+    "compile": "npx hardhat compile"
   },
   "repository": {
     "type": "git",
