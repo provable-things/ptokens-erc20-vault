@@ -16,9 +16,8 @@ module.exports = {
   },
   // ADD ANY GLOBALS HERE!
   globals: {
-    "web3": false,
-    "contract": false,
-    "artifacts": false
+    "ethers": false,
+    "upgrades": false,
   },
   rules: {
     "max-len": ["error", 120, 2, {
