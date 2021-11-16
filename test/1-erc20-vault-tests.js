@@ -1,110 +1,30 @@
-/* eslint-disable no-undef */
 const {
   prop,
   find,
-  curry,
   values,
 } = require('ramda')
+const {
+  pegOut,
+  addTokenSupport,
+  assertPegInEvent,
+  giveVaultAllowance,
+  getRandomEthAddress,
+  deployVaultContract,
+  getPegInEventFromTx,
+  maybeStripHexPrefix,
+  pegInWithoutUserData,
+  deployNonUpgradeableContract,
+} = require('./test-utils')
 const assert = require('assert')
 const VaultArtifact = artifacts.require('Erc20Vault')
 const Erc20Artifact = artifacts.require('Erc20Token')
 const Erc777Artifact = artifacts.require('Erc777Token')
 const { expectRevert } = require('@openzeppelin/test-helpers')
-const { deployProxy } = require('@openzeppelin/truffle-upgrades')
 const ContractWithCostlyFallbackFxnArtifact = artifacts.require('ContractWithExpensiveFallbackFunction')
 
-const GAS_LIMIT = 3e6
-const EMPTY_USER_DATA = '0x'
-
-const getPegInEventFromTx = _tx =>
-  new Promise((resolve, reject) => {
-    const pegInLogs = _tx.logs.filter(_log => _log.event === 'PegIn')
-    return pegInLogs.length === 1
-      ? resolve(prop(0, pegInLogs))
-      : reject(new Error('Could not get PegIn event from transaction!'))
-  })
-
-const pegOut = (
-  _vaultMethods,
-  _tokenHolderAddress,
-  _erc20TokenAddress,
-  _tokenAmount,
-  _from,
-  _userData = EMPTY_USER_DATA,
-  _gasLimit = GAS_LIMIT,
-) =>
-  _vaultMethods.pegOut(
-    _tokenHolderAddress,
-    _erc20TokenAddress,
-    _tokenAmount,
-    _userData,
-    { from: _from, gas: _gasLimit }
-  )
-
-const deployNonUpgradeableContract = (_web3, _artifact, _constructorParams = []) =>
-  new Promise((resolve, reject) =>
-    _artifact
-      .new(..._constructorParams)
-      .then(({ contract: { _jsonInterface, _address } }) =>
-        resolve(new _web3.eth.Contract(_jsonInterface, _address))
-      )
-      .catch(reject)
-  )
-
-const deployUpgradeableContract = curry((_artifact, _argsArray) =>
-  deployProxy(_artifact, _argsArray)
-)
-
-const deployVaultContract = deployUpgradeableContract(VaultArtifact)
-
-const getRandomEthAddress = _web3 =>
-  _web3.utils.randomHex(20)
-
-const addTokenSupport = (_vaultMethods, _tokenAddress, _from, _gasLimit = GAS_LIMIT) =>
-  _vaultMethods.addSupportedToken(_tokenAddress, { from: _from, gas: _gasLimit })
-
-const giveVaultAllowance = (
-  _tokenMethods,
-  _holderAddress,
-  _spenderAddress,
-  _tokenAmount,
-  _gasLimit = GAS_LIMIT
-) =>
-  _tokenMethods.approve(_spenderAddress, _tokenAmount).send({ from: _holderAddress, gas: _gasLimit })
-
-const assertPegInEvent = (
-  _pegInEvent,
-  _tokenAddress,
-  _tokenSender,
-  _tokenAmount,
-  _destinationAddress,
-  _userData = null,
-) => {
-  assert.strictEqual(_pegInEvent.args._userData, _userData)
-  assert.strictEqual(_pegInEvent.args._tokenSender, _tokenSender)
-  assert.strictEqual(_pegInEvent.args._tokenAddress, _tokenAddress)
-  assert.strictEqual(_pegInEvent.args._destinationAddress, _destinationAddress)
-  assert.strictEqual(_pegInEvent.args._tokenAmount.toString(), `${_tokenAmount}`)
-}
-
-const pegInWithoutUserData = (
-  _vaultMethods,
-  _tokenAddress,
-  _tokenAmount,
-  _tokenHolder,
-  _destinationAddress,
-  _gasLimit = GAS_LIMIT,
-) =>
-  _vaultMethods.pegIn(
-    _tokenAmount,
-    _tokenAddress,
-    _destinationAddress,
-    { from: _tokenHolder, gas: _gasLimit }
-  )
-
-const maybeStripHexPrefix = _s => _s.toLowerCase().startsWith('0x') ? _s.slice(2) : _s
-
 contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOLDER_ADDRESS, ...ACCOUNTS]) => {
+  const GAS_LIMIT = 3e6
+  const EMPTY_USER_DATA = '0x'
   const TOKEN_AMOUNT = 1337
   const USER_DATA = '0x1337'
   const TOKEN_HOLDER_BALANCE = 1e6
@@ -115,6 +35,7 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
   const NON_SUPPORTED_TOKEN_ERR = 'Token at supplied address is NOT supported!'
   const INSUFFICIENT_TOKEN_AMOUNT_ERR = 'Token amount must be greater than zero!'
   const ZERO_ADDRESS = `0x${new Array(40).fill(0).reduce((_acc, _e) => _acc + _e, '')}`
+  let WETH_ADDRESS, VAULT_METHODS, WETH_CONTRACT, ERC20_TOKEN_METHODS, VAULT_ADDRESS, ERC20_TOKEN_ADDRESS
 
   beforeEach(async () => {
     assert.notStrictEqual(PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS)
@@ -184,8 +105,10 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
   })
 
   describe('Token Approval Tests', () => {
+    let tokenIsSupported
+
     it('PNETWORK_ADDRESS can add appoved token address', async () => {
-      let tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
+      tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
       assert(!tokenIsSupported)
       await VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS, { from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
       tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
@@ -193,7 +116,7 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
     })
 
     it('NON_PNETWORK_ADDRESS cannot add appoved token address', async () => {
-      let tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
+      tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
       assert(!tokenIsSupported)
       await expectRevert(
         VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS, { from: NON_PNETWORK_ADDRESS, gas: GAS_LIMIT }),
@@ -213,7 +136,7 @@ contract('Erc20Vault Tests', ([PNETWORK_ADDRESS, NON_PNETWORK_ADDRESS, TOKEN_HOL
     })
 
     it('NON_PNETWORK_ADDRESS cannot remove appoved token address', async () => {
-      let tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
+      tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
       assert(!tokenIsSupported)
       await VAULT_METHODS.addSupportedToken(ERC20_TOKEN_ADDRESS, { from: PNETWORK_ADDRESS, gas: GAS_LIMIT })
       tokenIsSupported = await VAULT_METHODS.isTokenSupported(ERC20_TOKEN_ADDRESS)
