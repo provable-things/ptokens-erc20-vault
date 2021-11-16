@@ -1,5 +1,9 @@
 require('dotenv').config()
 const {
+  has,
+  prop
+} = require('ramda')
+const {
   ENDPOINT_ENV_VAR_KEY,
   ETHERSCAN_ENV_VAR_KEY
 } = require('./lib/constants')
@@ -13,9 +17,17 @@ const SUPPORTED_NETWORKS = [
   'ambrosTestnet',
 ]
 
+const getEnvVarOrThow = _name => {
+  if (has(_name, process.env)) {
+    return prop(_name, process.env)
+  } else {
+    throw new Error(`No '${_name}' env-var found - please provision one!`)
+  }
+}
+
 const getAllSupportedNetworks = _ =>
   SUPPORTED_NETWORKS.reduce((_acc, _network) =>
-    assoc(_network, { url: process.env[ENDPOINT_ENV_VAR_KEY] }, _acc), {}
+    assoc(_network, { url: getEnvVarOrThow(ENDPOINT_ENV_VAR_KEY) }, _acc), {}
   )
 
 const addLocalNetwork = _allSupportedNetworks =>
