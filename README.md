@@ -130,61 +130,63 @@ NOTE: If you're not verifying contracts, you don't need to provide this environm
 
 ### :guardsman: Smart-Contract Tests:
 
-1) Start truffle via:
+1) Install dependencies
 
 ```
-❍ npx truffle develop
+❍ npm ci
 ```
 
 2) Run the tests via:
 
 ```
-❍ truffle_develop> test
+❍ npm run tests
 ```
 
 Test output:
 
 ```
-  Contract: Erc20Vault Tests
-    Constructor Tests
-      ✓ Token addresses sent to constructor should be supported (573ms)
+
+  Erc20Vault Tests
+    Initalizer Tests
+      ✓ Token addresses sent to constructor should be supported (250ms)
     Ownership Tests
-      ✓ PNETWORK_ADDRESS can change PNETWORK_ADDRESS (122ms)
-      ✓ NON_PNETWORK_ADDRESS cannot change PNETWORK_ADDRESS (938ms)
-      ✓ Should not be able to set pNetwork address to the zero address (131ms)
+      ✓ PNETWORK_ADDRESS can change PNETWORK_ADDRESS (55ms)
+      ✓ NON_PNETWORK_ADDRESS cannot change PNETWORK_ADDRESS (62ms)
+      ✓ Should not be able to set pNetwork address to the zero address
     Token Approval Tests
-      ✓ PNETWORK_ADDRESS can add appoved token address (114ms)
-      ✓ NON_PNETWORK_ADDRESS cannot add appoved token address (199ms)
-      ✓ PNETWORK_ADDRESS can remove appoved token address (178ms)
-      ✓ NON_PNETWORK_ADDRESS cannot remove appoved token address (207ms)
+      ✓ PNETWORK_ADDRESS can add appoved token address
+      ✓ NON_PNETWORK_ADDRESS cannot add appoved token address
+      ✓ PNETWORK_ADDRESS can remove appoved token address
+      ✓ NON_PNETWORK_ADDRESS cannot remove appoved token address
     Peg In Tests
-      ✓ Should NOT peg in if token is not supported (127ms)
-      ✓ Should NOT peg in if token is supported but insufficient allowance approved (227ms)
-      ✓ Should NOT peg in supported token if sufficient allowance approved, but token amount is 0 (217ms)
-      ✓ Should peg in if token is supported and sufficient allowance approved (300ms)
-      ✓ Should peg in with user data (297ms)
+      ✓ Should NOT peg in if token is not supported
+      ✓ Should NOT peg in if token is supported but insufficient allowance approved
+      ✓ Should NOT peg in supported token if sufficient allowance approved, but token amount is 0
+      ✓ Should peg in if token is supported and sufficient allowance approved (54ms)
+      ✓ Should peg in with user data (47ms)
     ERC777 Peg In Tests
-      ✓ Should automatically peg in on ERC777 send (640ms)
-      ✓ Should peg in an ERC777 token (484ms)
+      ✓ Should automatically peg in on ERC777 send (41ms)
+      ✓ Should peg in an ERC777 token
     Peg Out Tests
-      ✓ NON_PNETWORK_ADDRESS cannot peg out (370ms)
-      ✓ PNETWORK_ADDRESS cannot peg out if insufficient balance (167ms)
-      ✓ PNETWORK_ADDRESS can peg out with sufficient balance (412ms)
-      ✓ Can peg out with user data (1029ms)
+      ✓ NON_PNETWORK_ADDRESS cannot peg out (45ms)
+      ✓ PNETWORK_ADDRESS cannot peg out if insufficient balance
+      ✓ PNETWORK_ADDRESS can peg out with sufficient balance (61ms)
+      ✓ Can peg out with user data (70ms)
+      ✓ Pegging out to ERC777 recipient with user data will call tokens recieved hook (91ms)
     wETH Tests
       Peg In wETH Tests
-        ✓ Should peg in wETH (315ms)
-        ✓ Should peg in wETH with user data (349ms)
+        ✓ Should peg in wETH
+        ✓ Should peg in wETH with user data
       Peg Out wETH Tests
-        ✓ Should peg out wETH without user data (424ms)
-        ✓ Should peg out wETH with user data (464ms)
-        ✓ Should peg out wETH to smart-contract w/ expensive fallback function (571ms)
-        ✓ Should be able to peg out wETH with user data to a smart-contract (569ms)
-        ✓ Should not fail to peg out wETH with user data to an EOA (324ms)
-        ✓ Pegging out wETH Should not be susceptible to re-entrancy attack (909ms)
+        ✓ Should peg out wETH without user data
+        ✓ Should peg out wETH with user data
+        ✓ Should peg out wETH to smart-contract w/ expensive fallback function (56ms)
+        ✓ Should be able to peg out wETH with user data to a smart-contract (69ms)
+        ✓ Should not fail to peg out wETH with user data to an EOA
+        ✓ Pegging out wETH Should not be susceptible to re-entrancy attack (55ms)
 
 
-  27 passing (49s)
+  28 passing (8s)
 
 ```
 
@@ -192,4 +194,4 @@ Test output:
 
 ## :white_medium_square: To Do:
 
-[ ] Allow custom gas prices?
+[ ] Allow custom gas prices in CLI?
