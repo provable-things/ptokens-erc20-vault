@@ -29,8 +29,9 @@ describe('Erc20Vault Tests', () => {
   const USER_DATA = '0x1337'
   const DESTINATION_ADDRESS = 'aneosaddress'
   const VAULT_PATH = 'contracts/Erc20Vault.sol:Erc20Vault'
-  const NON_PNETWORK_ERR = 'Caller must be PNETWORK address!'
+  const NON_PNETWORK_ERROR = 'Caller must be PNETWORK address!'
   const ERC777_CONTRACT_PATH = 'contracts/Erc777Token.sol:Erc777Token'
+  const UNSUPPORTED_CHAIN_ID_ERROR = 'Destination chain ID not supported!'
 
   let PNETWORK,
     NON_PNETWORK,
@@ -107,7 +108,7 @@ describe('Erc20Vault Tests', () => {
         await NON_OWNED_VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(_err.message.includes(NON_PNETWORK_ERROR))
         assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
       }
     })
@@ -145,7 +146,7 @@ describe('Erc20Vault Tests', () => {
         await NON_OWNED_VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(_err.message.includes(NON_PNETWORK_ERROR))
         assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
       }
     })
@@ -237,7 +238,7 @@ describe('Erc20Vault Tests', () => {
         await NON_OWNED_VAULT_CONTRACT.addSupportedToken(ERC20_TOKEN_ADDRESS)
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(_err.message.includes(NON_PNETWORK_ERROR))
       }
       tokenIsSupported = await VAULT_CONTRACT.isTokenSupported(ERC20_TOKEN_ADDRESS)
       assert(!tokenIsSupported)
@@ -262,7 +263,7 @@ describe('Erc20Vault Tests', () => {
         await NON_OWNED_VAULT_CONTRACT.removeSupportedToken(ERC20_TOKEN_ADDRESS)
         assert.fail('Should not have succeeded')
       } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(_err.message.includes(NON_PNETWORK_ERROR))
       }
     })
   })
@@ -298,8 +299,7 @@ describe('Erc20Vault Tests', () => {
         )
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        const expectedErr = 'Destination chain ID not supported!'
-        assert(_err.message.includes(expectedErr))
+        assert(_err.message.includes(UNSUPPORTED_CHAIN_ID_ERROR))
       }
     })
 
@@ -391,27 +391,8 @@ describe('Erc20Vault Tests', () => {
     })
   })
 
-  describe.skip('ERC777 Peg In Tests', () => {
-    it('Should automatically peg in on ERC777 send', async () => {
-      const abiCodec = new ethers.utils.AbiCoder()
-      const eventFragment = find(x => x.name === 'PegIn' && x.type === 'event', VAULT_CONTRACT.interface.fragments)
-      const eventSignature = getEventSignatureFromEventFragment(eventFragment)
-      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('ERC777-pegIn'))
-      const userData = abiCodec.encode(['bytes32', 'string'], [tag, DESTINATION_ADDRESS])
-      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, '0x')
-      const tx = await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
-      const receipt = await tx.wait()
-      const event = find(e => e.topics[0] === eventSignature, values(receipt.events))
-      assert(event != null, 'PegIn event not found')
-      const decodedEvent = abiCodec.decode(eventFragment.inputs.map(prop('type')), event.data)
-      const expectedLength = 5
-      assert(decodedEvent.length, expectedLength)
-      assert.strictEqual(decodedEvent[0], ERC777_ADDRESS)
-      assert.strictEqual(decodedEvent[1], TOKEN_HOLDER_ADDRESS)
-      assert(decodedEvent[2].eq(BigNumber.from(TOKEN_AMOUNT)))
-      assert.strictEqual(decodedEvent[3], DESTINATION_ADDRESS)
-      assert.strictEqual(decodedEvent[4], userData)
-    })
+  describe('ERC777 Peg In Tests', () => {
+    const ABI_CODEC = new ethers.utils.AbiCoder()
 
     it('Should peg in an ERC777 token', async () => {
       const tx = await pegInWithoutUserData(
@@ -428,6 +409,46 @@ describe('Erc20Vault Tests', () => {
         TOKEN_AMOUNT,
         DESTINATION_ADDRESS
       )
+    })
+
+    it('Should automatically peg in on ERC777 send', async () => {
+      const eventFragment = find(x => x.name === 'PegIn' && x.type === 'event', VAULT_CONTRACT.interface.fragments)
+      const eventSignature = getEventSignatureFromEventFragment(eventFragment)
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('ERC777-pegIn'))
+      const userData = ABI_CODEC.encode(
+        [ 'bytes32', 'string', 'bytes4' ],
+        [ tag, DESTINATION_ADDRESS, DESTINATION_CHAIN_ID ],
+      )
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, '0x')
+      const tx = await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
+      const receipt = await tx.wait()
+      const event = find(e => e.topics[0] === eventSignature, values(receipt.events))
+      assert(event != null, 'PegIn event not found')
+      const decodedEvent = ABI_CODEC.decode(eventFragment.inputs.map(prop('type')), event.data)
+      const expectedLength = 5
+      assert(decodedEvent.length, expectedLength)
+      assert.strictEqual(decodedEvent[0], ERC777_ADDRESS)
+      assert.strictEqual(decodedEvent[1], TOKEN_HOLDER_ADDRESS)
+      assert(decodedEvent[2].eq(BigNumber.from(TOKEN_AMOUNT)))
+      assert.strictEqual(decodedEvent[3], DESTINATION_ADDRESS)
+      assert.strictEqual(decodedEvent[4], userData)
+    })
+
+    it('Should fail to peg in automatically on ERC777 send if destination chain ID is not supported', async () => {
+      const unsupportedDestinationId = '0xd3adb33f'
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(unsupportedDestinationId))
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('ERC777-pegIn'))
+      const userData = ABI_CODEC.encode(
+        [ 'bytes32', 'string', 'bytes4' ],
+        [ tag, DESTINATION_ADDRESS, unsupportedDestinationId ],
+      )
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, '0x')
+      try {
+        await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        assert(_err.message.includes(UNSUPPORTED_CHAIN_ID_ERROR))
+      }
     })
   })
 
@@ -450,7 +471,7 @@ describe('Erc20Vault Tests', () => {
         )
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(_err.message.includes(NON_PNETWORK_ERROR))
       }
     })
 

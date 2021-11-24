@@ -235,13 +235,21 @@ contract Erc20Vault is
         override
         onlySupportedTokens(msg.sender)
     {
-        //bytes4 _destinationChainId
-        // FIXME we need the other param but can't accept it here because otherwise fxn sig is different.
         require(to == address(this), "Token receiver is not this contract");
         if (userData.length > 0) {
             require(amount > 0, "Token amount must be greater than zero!");
-            (bytes32 tag, string memory _destinationAddress) = abi.decode(userData, (bytes32, string));
-            require(tag == keccak256("ERC777-pegIn"), "Invalid tag for automatic pegIn on ERC777 send");
+            (bytes32 tag, string memory _destinationAddress, bytes4 _destinationChainId) = abi.decode(
+                userData,
+                (bytes32, string, bytes4)
+            );
+            require(
+                tag == keccak256("ERC777-pegIn"),
+                "Invalid tag for automatic pegIn on ERC777 send"
+            );
+            require(
+                SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainId],
+                "Destination chain ID not supported!"
+            );
             emit PegIn(
                 msg.sender,
                 from,
@@ -249,7 +257,7 @@ contract Erc20Vault is
                 _destinationAddress,
                 userData,
                 ORIGIN_CHAIN_ID,
-                ORIGIN_CHAIN_ID // FIXME see above!
+                _destinationChainId
             );
         }
     }
