@@ -91,11 +91,17 @@ const getEventSignatureFromEventFragment = _eventFragment =>
       .reduce((_acc, _type, _i) => `${_acc}${_i === 0 ? '' : ','}${_type}`, '')
   })`))
 
+/* eslint-disable-next-line no-return-assign */
+const silenceConsoleInfoOutput = _ =>
+/* eslint-disable-next-line no-empty-function */
+  console.info = __ => {}
+
 module.exports = {
   getEventSignatureFromEventFragment,
   deployNonUpgradeableContract,
   deployUpgradeableContract,
   getPegInEventFromReceipt,
+  silenceConsoleInfoOutput,
   pegInWithoutUserData,
   getRandomEthAddress,
   assertPegInEvent,

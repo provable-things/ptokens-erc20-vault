@@ -4,10 +4,13 @@ const {
 } = require('./test-constants')
 const assert = require('assert')
 const rewire = require('rewire')
+const { silenceConsoleInfoOutput } = require('./test-utils')
 const rewiredModule = rewire('../lib/get-encoded-init-args')
 const encodeInitArgs = rewiredModule.__get__('encodeInitArgs')
 
 describe('Testing Constructor Arg Encoder...', () => {
+  silenceConsoleInfoOutput()
+
   it('Should encode init args correctly', async () => {
     const wEthAddress = '0x7F101fE45e6649A6fB8F3F8B43ed03D353f2B90c'
     const tokensToSupport = [
