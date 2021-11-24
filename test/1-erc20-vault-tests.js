@@ -392,6 +392,7 @@ describe('Erc20Vault Tests', () => {
   })
 
   describe('ERC777 Peg In Tests', () => {
+    const PEG_IN_TAG = 'ERC777-pegIn'
     const ABI_CODEC = new ethers.utils.AbiCoder()
 
     it('Should peg in an ERC777 token', async () => {
@@ -414,12 +415,12 @@ describe('Erc20Vault Tests', () => {
     it('Should automatically peg in on ERC777 send', async () => {
       const eventFragment = find(x => x.name === 'PegIn' && x.type === 'event', VAULT_CONTRACT.interface.fragments)
       const eventSignature = getEventSignatureFromEventFragment(eventFragment)
-      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('ERC777-pegIn'))
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PEG_IN_TAG))
       const userData = ABI_CODEC.encode(
         [ 'bytes32', 'string', 'bytes4' ],
         [ tag, DESTINATION_ADDRESS, DESTINATION_CHAIN_ID ],
       )
-      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, '0x')
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
       const tx = await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
       const receipt = await tx.wait()
       const event = find(e => e.topics[0] === eventSignature, values(receipt.events))
@@ -437,17 +438,45 @@ describe('Erc20Vault Tests', () => {
     it('Should fail to peg in automatically on ERC777 send if destination chain ID is not supported', async () => {
       const unsupportedDestinationId = '0xd3adb33f'
       assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(unsupportedDestinationId))
-      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('ERC777-pegIn'))
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PEG_IN_TAG))
       const userData = ABI_CODEC.encode(
         [ 'bytes32', 'string', 'bytes4' ],
         [ tag, DESTINATION_ADDRESS, unsupportedDestinationId ],
       )
-      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, '0x')
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
       try {
         await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
         assert.fail('Should not have succeeded!')
       } catch (_err) {
         assert(_err.message.includes(UNSUPPORTED_CHAIN_ID_ERROR))
+      }
+    })
+
+    it('Should fail to automatically peg-in if encoded user data is incorrect', async () => {
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PEG_IN_TAG))
+      const malformedUserData = ABI_CODEC.encode([ 'bytes32', 'bytes4' ], [ tag, DESTINATION_CHAIN_ID ])
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
+      try {
+        await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, malformedUserData)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        assert(_err.message.includes('reverted'))
+      }
+    })
+
+    it('Should fail to automatically peg-in if encoded peg-in tag is incorrect', async () => {
+      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes('Incorrect peg-in tag'))
+      const userData = ABI_CODEC.encode(
+        [ 'bytes32', 'string', 'bytes4' ],
+        [ tag, DESTINATION_ADDRESS, DESTINATION_CHAIN_ID ],
+      )
+      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
+      try {
+        await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        const expectedError = 'Invalid tag for automatic pegIn on ERC777 send'
+        assert(_err.message.includes(expectedError))
       }
     })
   })
@@ -522,7 +551,7 @@ describe('Erc20Vault Tests', () => {
       assert(tokenHolderBalanceAfterPegOut.eq(tokenHolderBalanceBeforePegOut.add(TOKEN_AMOUNT)))
     })
 
-    it('Pegging out to ERC777 recipient with user data will call tokens recieved hook', async () => {
+    it('Pegging out to ERC777 recipient with user data will call tokens received hook', async () => {
       const userData = '0xdecaff'
       const ERC777_RECIPIENT_PATH = 'contracts/Erc777Recipient.sol:Erc777Recipient'
       await giveAllowance(ERC777_CONTRACT.connect(TOKEN_HOLDER), VAULT_ADDRESS, TOKEN_AMOUNT)
