@@ -1,6 +1,8 @@
 const {
   ADDRESS_PROP,
   EMPTY_USER_DATA,
+  ORIGIN_CHAIN_ID,
+  DESTINATION_CHAIN_ID,
 } = require('./test-constants')
 const assert = require('assert')
 const { prop } = require('ramda')
@@ -50,12 +52,25 @@ const assertPegInEvent = (
   assert.strictEqual(_pegInEvent.args._userData, _userData)
   assert.strictEqual(_pegInEvent.args._tokenSender, _tokenSender)
   assert.strictEqual(_pegInEvent.args._tokenAddress, _tokenAddress)
+  assert.strictEqual(_pegInEvent.args._originChainId, ORIGIN_CHAIN_ID)
   assert.strictEqual(_pegInEvent.args._destinationAddress, _destinationAddress)
+  assert.strictEqual(_pegInEvent.args._destinationChainId, DESTINATION_CHAIN_ID)
   assert.strictEqual(_pegInEvent.args._tokenAmount.toString(), `${_tokenAmount}`)
 }
 
-const pegInWithoutUserData = (_vaultContract, _tokenAddress, _tokenAmount, _destinationAddress) =>
-  _vaultContract['pegIn(uint256,address,string)'](_tokenAmount, _tokenAddress, _destinationAddress)
+const pegInWithoutUserData = (
+  _vaultContract,
+  _tokenAddress,
+  _tokenAmount,
+  _destinationAddress,
+  _destinationChainId = DESTINATION_CHAIN_ID
+) =>
+  _vaultContract['pegIn(uint256,address,string,bytes4)'](
+    _tokenAmount,
+    _tokenAddress,
+    _destinationAddress,
+    _destinationChainId,
+  )
 
 const deployUpgradeableContract = (_contractPath, _deployArgs) =>
   ethers.getContractFactory(_contractPath).then(_factory => upgrades.deployProxy(_factory, _deployArgs))

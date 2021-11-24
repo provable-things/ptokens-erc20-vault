@@ -35,14 +35,16 @@ contract Erc20Vault is
         address _tokenSender,
         uint256 _tokenAmount,
         string _destinationAddress,
-        bytes _userData
+        bytes _userData,
+        bytes4 _originChainId,
+        bytes4 _destinationChainId
     );
 
     function initialize(
         address _weth,
-        address [] memory _tokensToSupport,
-        bytes4 originChainId,
-        bytes4[] memory destinationChainIds
+        address[] memory _tokensToSupport,
+        bytes4 _originChainId,
+        bytes4[] memory _destinationChainIds
     )
         public
         initializer
@@ -53,9 +55,9 @@ contract Erc20Vault is
         }
         weth = IWETH(_weth);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
-        ORIGIN_CHAIN_ID = originChainId;
-        for (uint256 i = 0; i < destinationChainIds.length; i++) {
-            SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainIds[i]] = true;
+        ORIGIN_CHAIN_ID = _originChainId;
+        for (uint256 i = 0; i < _destinationChainIds.length; i++) {
+            SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainIds[i]] = true;
         }
     }
 
@@ -63,6 +65,17 @@ contract Erc20Vault is
         require(msg.sender == PNETWORK, "Caller must be PNETWORK address!");
         _;
     }
+
+    modifier onlySupportedDestinations(bytes4 _destinationChainId) {
+        require(SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainId], "Destination chain ID not supported!");
+        _;
+    }
+
+    modifier onlySupportedTokens(address _tokenAddress) {
+        require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
+        _;
+    }
+
 
     function addSupportedDestinationChainId(
         bytes4 destinationChainId
@@ -172,27 +185,38 @@ contract Erc20Vault is
     function pegIn(
         uint256 _tokenAmount,
         address _tokenAddress,
-        string calldata _destinationAddress
+        string calldata _destinationAddress,
+        bytes4 _destinationChainId
     )
         external
         returns (bool)
     {
-        return pegIn(_tokenAmount, _tokenAddress, _destinationAddress, "");
+        return pegIn(_tokenAmount, _tokenAddress, _destinationAddress, _destinationChainId, "");
     }
 
     function pegIn(
         uint256 _tokenAmount,
         address _tokenAddress,
         string memory _destinationAddress,
+        bytes4 _destinationChainId,
         bytes memory _userData
     )
         public
+        onlySupportedTokens(_tokenAddress)
+        onlySupportedDestinations(_destinationChainId)
         returns (bool)
     {
-        require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20Upgradeable(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
-        emit PegIn(_tokenAddress, msg.sender, _tokenAmount, _destinationAddress, _userData);
+        emit PegIn(
+            _tokenAddress,
+            msg.sender,
+            _tokenAmount,
+            _destinationAddress,
+            _userData,
+            ORIGIN_CHAIN_ID,
+            _destinationChainId
+        );
         return true;
     }
 
@@ -206,38 +230,63 @@ contract Erc20Vault is
         uint256 amount,
         bytes calldata userData,
         bytes calldata /*operatorData*/
-    ) external override {
-        address _tokenAddress = msg.sender;
-        require(supportedTokens.contains(_tokenAddress), "caller is not a supported ERC777 token!");
+    )
+        external
+        override
+        onlySupportedTokens(msg.sender)
+    {
+        //bytes4 _destinationChainId
+        // FIXME we need the other param but can't accept it here because otherwise fxn sig is different.
         require(to == address(this), "Token receiver is not this contract");
         if (userData.length > 0) {
             require(amount > 0, "Token amount must be greater than zero!");
             (bytes32 tag, string memory _destinationAddress) = abi.decode(userData, (bytes32, string));
             require(tag == keccak256("ERC777-pegIn"), "Invalid tag for automatic pegIn on ERC777 send");
-            emit PegIn(_tokenAddress, from, amount, _destinationAddress, userData);
+            emit PegIn(
+                msg.sender,
+                from,
+                amount,
+                _destinationAddress,
+                userData,
+                ORIGIN_CHAIN_ID,
+                ORIGIN_CHAIN_ID // FIXME see above!
+            );
         }
     }
 
-    function pegInEth(string calldata _destinationAddress)
+    function pegInEth(
+        string calldata _destinationAddress,
+        bytes4 _destinationChainId
+    )
         external
         payable
         returns (bool)
     {
-        return pegInEth(_destinationAddress, "");
+        return pegInEth(_destinationAddress, _destinationChainId, "");
     }
 
     function pegInEth(
         string memory _destinationAddress,
+        bytes4 _destinationChainId,
         bytes memory _userData
     )
         public
         payable
+        onlySupportedDestinations(_destinationChainId)
         returns (bool)
     {
         require(supportedTokens.contains(address(weth)), "WETH is NOT supported!");
         require(msg.value > 0, "Ethers amount must be greater than zero!");
         weth.deposit{ value: msg.value }();
-        emit PegIn(address(weth), msg.sender, msg.value, _destinationAddress, _userData);
+        emit PegIn(
+            address(weth),
+            msg.sender,
+            msg.value,
+            _destinationAddress,
+            _userData,
+            ORIGIN_CHAIN_ID,
+            _destinationChainId
+        );
         return true;
     }
 
