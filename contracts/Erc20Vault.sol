@@ -18,7 +18,6 @@ contract Erc20Vault is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
-
     IERC1820RegistryUpgradeable constant private _erc1820 = IERC1820RegistryUpgradeable(
         0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24
     );
@@ -28,6 +27,8 @@ contract Erc20Vault is
     EnumerableSetUpgradeable.AddressSet private supportedTokens;
     address public PNETWORK;
     IWETH public weth;
+    bytes4 public ORIGIN_CHAIN_ID;
+    mapping(bytes4 => bool) public SUPPORTED_DESTINATION_CHAIN_IDS;
 
     event PegIn(
         address _tokenAddress,
@@ -39,9 +40,12 @@ contract Erc20Vault is
 
     function initialize(
         address _weth,
-        address [] memory _tokensToSupport
+        address [] memory _tokensToSupport,
+        bytes4 originChainId,
+        bytes4[] memory destinationChainIds
     )
-        public initializer
+        public
+        initializer
     {
         PNETWORK = msg.sender;
         for (uint256 i = 0; i < _tokensToSupport.length; i++) {
@@ -49,6 +53,10 @@ contract Erc20Vault is
         }
         weth = IWETH(_weth);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
+        ORIGIN_CHAIN_ID = originChainId;
+        for (uint256 i = 0; i < destinationChainIds.length; i++) {
+            SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainIds[i]] = true;
+        }
     }
 
     modifier onlyPNetwork() {
@@ -56,8 +64,60 @@ contract Erc20Vault is
         _;
     }
 
-    receive() external payable {
-        require(msg.sender == address(weth));
+    function addSupportedDestinationChainId(
+        bytes4 destinationChainId
+    )
+        public
+        onlyPNetwork
+        returns (bool)
+    {
+        require(
+            !SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId],
+            "Destination chain ID already supported"
+        );
+        SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId] = true;
+        return true;
+    }
+
+    function addSupportedDestinationChainIds(
+        bytes4[] calldata destinationChainIds
+    )
+        external
+        onlyPNetwork
+        returns (bool)
+    {
+        for (uint256 i = 0; i < destinationChainIds.length; i++) {
+            addSupportedDestinationChainId(destinationChainIds[i]);
+        }
+        return true;
+    }
+
+    function removeSupportedDestinationChainId(
+        bytes4 destinationChainId
+    )
+        public
+        onlyPNetwork
+        returns (bool)
+    {
+        require(
+            SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId],
+            "Destination chain ID already not supported"
+        );
+        SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId] = false;
+        return true;
+    }
+
+    function removeSupportedDestinationChainIds(
+        bytes4[] calldata destinationChainIds
+    )
+        external
+        onlyPNetwork
+        returns (bool)
+    {
+        for (uint256 i = 0; i < destinationChainIds.length; i++) {
+            removeSupportedDestinationChainId(destinationChainIds[i]);
+        }
+        return true;
     }
 
     function setWeth(address _weth) external onlyPNetwork {
@@ -236,5 +296,9 @@ contract Erc20Vault is
                 return true;
             }
         }
+    }
+
+    receive() external payable {
+        require(msg.sender == address(weth));
     }
 }

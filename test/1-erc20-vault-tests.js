@@ -6,6 +6,8 @@ const {
 const {
   ADDRESS_PROP,
   EMPTY_USER_DATA,
+  ORIGIN_CHAIN_ID,
+  DESTINATION_CHAIN_ID,
 } = require('./test-constants')
 const {
   pegOut,
@@ -57,7 +59,10 @@ describe('Erc20Vault Tests', () => {
     TOKEN_HOLDER_ADDRESS = prop(ADDRESS_PROP, TOKEN_HOLDER)
     WETH_CONTRACT = await deployNonUpgradeableContract('contracts/WETH.sol:WETH')
     WETH_ADDRESS = prop(ADDRESS_PROP, WETH_CONTRACT)
-    VAULT_CONTRACT = await deployUpgradeableContract(VAULT_PATH, [ WETH_ADDRESS, [] ])
+    VAULT_CONTRACT = await deployUpgradeableContract(
+      VAULT_PATH,
+      [ WETH_ADDRESS, [], ORIGIN_CHAIN_ID, [ DESTINATION_CHAIN_ID ] ]
+    )
     VAULT_ADDRESS = prop(ADDRESS_PROP, VAULT_CONTRACT)
     ERC20_TOKEN_CONTRACT = await deployNonUpgradeableContract('contracts/Erc20Token.sol:Erc20Token')
     ERC20_TOKEN_ADDRESS = prop(ADDRESS_PROP, ERC20_TOKEN_CONTRACT)
@@ -75,12 +80,101 @@ describe('Erc20Vault Tests', () => {
   describe('Initalizer Tests', () => {
     it('Token addresses sent to constructor should be supported', async () => {
       const addresses = [ getRandomEthAddress(), getRandomEthAddress() ]
-      const newVault = await deployUpgradeableContract(VAULT_PATH, [ WETH_ADDRESS, addresses ])
+      const newVault = await deployUpgradeableContract(
+        VAULT_PATH,
+        [ WETH_ADDRESS, addresses, ORIGIN_CHAIN_ID, [ DESTINATION_CHAIN_ID ] ]
+      )
       addresses
         .map(async _address => {
           const tokenIsSupported = await newVault.isTokenSupported(_address)
           assert(tokenIsSupported)
         })
+    })
+
+    it('Should have destination chain ID set in mapping', async () => {
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID))
+    })
+  })
+
+  describe('Setting & Unsetting Destination Chain IDs Tests', () => {
+    const DESTINATION_CHAIN_ID_1 = '0xd3adb33f'
+    const DESTINATION_CHAIN_ID_2 = '0xc0ffeeee'
+    const DESTINATION_CHAIN_IDS = [ DESTINATION_CHAIN_ID_1, DESTINATION_CHAIN_ID_2 ]
+
+    it('Only PNETWORK can add supported chain ID', async () => {
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      try {
+        await NON_OWNED_VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      }
+    })
+
+    it('Should add a supported destination chain ID', async () => {
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+    })
+
+    it('Should add multiple supported destination chain IDs', async () => {
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
+      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
+    })
+
+    it('Should revert when adding supprted destination chain ID if already supported', async () => {
+      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      try {
+        await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        const expectedError = 'Destination chain ID already supported'
+        assert(_err.message.includes(expectedError))
+      }
+    })
+
+    it('Only PNETWORK can remove supported chain ID', async () => {
+      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      try {
+        await NON_OWNED_VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        assert(_err.message.includes(NON_PNETWORK_ERR))
+        assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      }
+    })
+
+    it('Should remove a supported destination chain ID', async () => {
+      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      await VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+    })
+
+    it('Should remove multiple supported destination chain IDs', async () => {
+      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
+      await VAULT_CONTRACT.removeSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
+    })
+
+    it('Should revert when removing supprted destination chain ID if already not supported', async () => {
+      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
+      try {
+        await VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
+        assert.fail('Should not have succeeded!')
+      } catch (_err) {
+        const expectedError = 'Destination chain ID already not supported'
+        assert(_err.message.includes(expectedError))
+      }
     })
   })
 
