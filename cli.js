@@ -22,7 +22,6 @@ const TOOL_NAME = 'cli.js'
 const PEG_IN_CMD = 'pegIn'
 const AMOUNT_ARG = '<amount>'
 const TOKEN_FLAG = '--token'
-const CHAIN_ID_FLAG = '--id'
 const VERSION_ARG = '--version'
 const NETWORK_ARG = '<network>'
 const ETH_ADDRESS_ARG = '<ethAddress>'
@@ -39,13 +38,12 @@ const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const TOKENS_ARG = `${TOKEN_FLAG}=<ethAddress>`
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
 const IS_TOKEN_SUPPORTED_CMD = 'isTokenSupported'
-const CHAIN_IDS_ARG = `${CHAIN_ID_FLAG}=<chainId>`
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
-const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
 const GET_ENCODED_INIT_ARGS_CMD = 'getEncodedInitArgs'
+const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
 const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
 const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
 
@@ -83,15 +81,15 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${IS_TOKEN_SUPPORTED_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
-  ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${USER_DATA_ARG}
-  ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${ORIGIN_CHAIN_ID_ARG} ${TOKENS_ARG}... ${CHAIN_IDS_ARG}...
+  ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${ORIGIN_CHAIN_ID_ARG} ${TOKENS_ARG}...
+  ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${DESTINATION_CHAIN_ID_ARG} ${USER_DATA_ARG}
 
 ❍ Commands:
   ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
-  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG}.
+  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
   ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
@@ -109,7 +107,6 @@ const USAGE_INFO = `
   ${DEPLOYED_ADDRESS_ARG}     ❍ The ETH address of the deployed vault.
   ${DESTINATION_ADDRESS_ARG}  ❍ Destination address of a token peg in.
   ${USER_DATA_ARG}      ❍ User data in hex format [default: 0x].
-  ${CHAIN_IDS_ARG}        ❍ Metadata chain ID of a destination to support.
   ${TOKENS_ARG}  ❍ ETH addresses of tokens the vault will support.
   ${AMOUNT_ARG}              ❍ Amount of tokens in their most granular format.
   ${ORIGIN_CHAIN_ID_ARG}       ❍ Metadata chain ID of the chain this contract is deployed to.
@@ -148,7 +145,6 @@ const main = _ => {
       CLI_ARGS[WETH_ADDRESS_ARG],
       CLI_ARGS[TOKEN_FLAG],
       CLI_ARGS[ORIGIN_CHAIN_ID_ARG],
-      CLI_ARGS[CHAIN_ID_FLAG],
     )
   } else if (CLI_ARGS[PEG_IN_CMD]) {
     return pegIn(
@@ -156,6 +152,7 @@ const main = _ => {
       CLI_ARGS[AMOUNT_ARG],
       CLI_ARGS[TOKEN_ADDRESS_ARG],
       CLI_ARGS[DESTINATION_ADDRESS_ARG],
+      CLI_ARGS[DESTINATION_CHAIN_ID_ARG],
       CLI_ARGS[USER_DATA_OPTIONAL_ARG],
     )
   }
