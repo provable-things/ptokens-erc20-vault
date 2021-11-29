@@ -28,7 +28,6 @@ contract Erc20Vault is
     address public PNETWORK;
     IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
-    mapping(bytes4 => bool) public SUPPORTED_DESTINATION_CHAIN_IDS;
 
     event PegIn(
         address _tokenAddress,
@@ -43,8 +42,7 @@ contract Erc20Vault is
     function initialize(
         address _weth,
         address[] memory _tokensToSupport,
-        bytes4 _originChainId,
-        bytes4[] memory _destinationChainIds
+        bytes4 _originChainId
     )
         public
         initializer
@@ -56,9 +54,6 @@ contract Erc20Vault is
         weth = IWETH(_weth);
         _erc1820.setInterfaceImplementer(address(this), TOKENS_RECIPIENT_INTERFACE_HASH, address(this));
         ORIGIN_CHAIN_ID = _originChainId;
-        for (uint256 i = 0; i < _destinationChainIds.length; i++) {
-            SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainIds[i]] = true;
-        }
     }
 
     modifier onlyPNetwork() {
@@ -66,71 +61,9 @@ contract Erc20Vault is
         _;
     }
 
-    modifier onlySupportedDestinations(bytes4 _destinationChainId) {
-        require(SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainId], "Destination chain ID not supported!");
-        _;
-    }
-
     modifier onlySupportedTokens(address _tokenAddress) {
         require(supportedTokens.contains(_tokenAddress), "Token at supplied address is NOT supported!");
         _;
-    }
-
-
-    function addSupportedDestinationChainId(
-        bytes4 destinationChainId
-    )
-        public
-        onlyPNetwork
-        returns (bool)
-    {
-        require(
-            !SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId],
-            "Destination chain ID already supported"
-        );
-        SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId] = true;
-        return true;
-    }
-
-    function addSupportedDestinationChainIds(
-        bytes4[] calldata destinationChainIds
-    )
-        external
-        onlyPNetwork
-        returns (bool)
-    {
-        for (uint256 i = 0; i < destinationChainIds.length; i++) {
-            addSupportedDestinationChainId(destinationChainIds[i]);
-        }
-        return true;
-    }
-
-    function removeSupportedDestinationChainId(
-        bytes4 destinationChainId
-    )
-        public
-        onlyPNetwork
-        returns (bool)
-    {
-        require(
-            SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId],
-            "Destination chain ID already not supported"
-        );
-        SUPPORTED_DESTINATION_CHAIN_IDS[destinationChainId] = false;
-        return true;
-    }
-
-    function removeSupportedDestinationChainIds(
-        bytes4[] calldata destinationChainIds
-    )
-        external
-        onlyPNetwork
-        returns (bool)
-    {
-        for (uint256 i = 0; i < destinationChainIds.length; i++) {
-            removeSupportedDestinationChainId(destinationChainIds[i]);
-        }
-        return true;
     }
 
     function setWeth(address _weth) external onlyPNetwork {
@@ -203,7 +136,6 @@ contract Erc20Vault is
     )
         public
         onlySupportedTokens(_tokenAddress)
-        onlySupportedDestinations(_destinationChainId)
         returns (bool)
     {
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
@@ -246,10 +178,6 @@ contract Erc20Vault is
                 tag == keccak256("ERC777-pegIn"),
                 "Invalid tag for automatic pegIn on ERC777 send"
             );
-            require(
-                SUPPORTED_DESTINATION_CHAIN_IDS[_destinationChainId],
-                "Destination chain ID not supported!"
-            );
             emit PegIn(
                 msg.sender,
                 from,
@@ -280,7 +208,6 @@ contract Erc20Vault is
     )
         public
         payable
-        onlySupportedDestinations(_destinationChainId)
         returns (bool)
     {
         require(supportedTokens.contains(address(weth)), "WETH is NOT supported!");

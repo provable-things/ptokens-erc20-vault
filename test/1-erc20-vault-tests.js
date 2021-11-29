@@ -31,7 +31,6 @@ describe('Erc20Vault Tests', () => {
   const VAULT_PATH = 'contracts/Erc20Vault.sol:Erc20Vault'
   const NON_PNETWORK_ERROR = 'Caller must be PNETWORK address!'
   const ERC777_CONTRACT_PATH = 'contracts/Erc777Token.sol:Erc777Token'
-  const UNSUPPORTED_CHAIN_ID_ERROR = 'Destination chain ID not supported!'
 
   let PNETWORK,
     NON_PNETWORK,
@@ -62,7 +61,7 @@ describe('Erc20Vault Tests', () => {
     WETH_ADDRESS = prop(ADDRESS_PROP, WETH_CONTRACT)
     VAULT_CONTRACT = await deployUpgradeableContract(
       VAULT_PATH,
-      [ WETH_ADDRESS, [], ORIGIN_CHAIN_ID, [ DESTINATION_CHAIN_ID ] ]
+      [ WETH_ADDRESS, [], ORIGIN_CHAIN_ID ]
     )
     VAULT_ADDRESS = prop(ADDRESS_PROP, VAULT_CONTRACT)
     ERC20_TOKEN_CONTRACT = await deployNonUpgradeableContract('contracts/Erc20Token.sol:Erc20Token')
@@ -83,99 +82,13 @@ describe('Erc20Vault Tests', () => {
       const addresses = [ getRandomEthAddress(), getRandomEthAddress() ]
       const newVault = await deployUpgradeableContract(
         VAULT_PATH,
-        [ WETH_ADDRESS, addresses, ORIGIN_CHAIN_ID, [ DESTINATION_CHAIN_ID ] ]
+        [ WETH_ADDRESS, addresses, ORIGIN_CHAIN_ID ]
       )
       addresses
         .map(async _address => {
           const tokenIsSupported = await newVault.isTokenSupported(_address)
           assert(tokenIsSupported)
         })
-    })
-
-    it('Should have destination chain ID set in mapping', async () => {
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID))
-    })
-  })
-
-  describe('Setting & Unsetting Destination Chain IDs Tests', () => {
-    const DESTINATION_CHAIN_ID_1 = '0xd3adb33f'
-    const DESTINATION_CHAIN_ID_2 = '0xc0ffeeee'
-    const DESTINATION_CHAIN_IDS = [ DESTINATION_CHAIN_ID_1, DESTINATION_CHAIN_ID_2 ]
-
-    it('Only PNETWORK can add supported chain ID', async () => {
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      try {
-        await NON_OWNED_VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERROR))
-        assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      }
-    })
-
-    it('Should add a supported destination chain ID', async () => {
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-    })
-
-    it('Should add multiple supported destination chain IDs', async () => {
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
-      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
-    })
-
-    it('Should revert when adding supprted destination chain ID if already supported', async () => {
-      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      try {
-        await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        const expectedError = 'Destination chain ID already supported'
-        assert(_err.message.includes(expectedError))
-      }
-    })
-
-    it('Only PNETWORK can remove supported chain ID', async () => {
-      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      try {
-        await NON_OWNED_VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        assert(_err.message.includes(NON_PNETWORK_ERROR))
-        assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      }
-    })
-
-    it('Should remove a supported destination chain ID', async () => {
-      await VAULT_CONTRACT.addSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      await VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-    })
-
-    it('Should remove multiple supported destination chain IDs', async () => {
-      await VAULT_CONTRACT.addSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      assert(await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
-      await VAULT_CONTRACT.removeSupportedDestinationChainIds(DESTINATION_CHAIN_IDS)
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_2))
-    })
-
-    it('Should revert when removing supprted destination chain ID if already not supported', async () => {
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID_1))
-      try {
-        await VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID_1)
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        const expectedError = 'Destination chain ID already not supported'
-        assert(_err.message.includes(expectedError))
-      }
     })
   })
 
@@ -282,24 +195,6 @@ describe('Erc20Vault Tests', () => {
       } catch (_err) {
         const expectedErr = 'Token at supplied address is NOT supported!'
         assert(_err.message.includes(expectedErr))
-      }
-    })
-
-    it('Should NOT peg in if destination address is unsupported', async () => {
-      await VAULT_CONTRACT.addSupportedToken(ERC20_TOKEN_ADDRESS)
-      assert(await VAULT_CONTRACT.isTokenSupported(ERC20_TOKEN_ADDRESS))
-      await VAULT_CONTRACT.removeSupportedDestinationChainId(DESTINATION_CHAIN_ID)
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(DESTINATION_CHAIN_ID))
-      try {
-        await pegInWithoutUserData(
-          VAULT_CONTRACT,
-          ERC20_TOKEN_ADDRESS,
-          TOKEN_AMOUNT,
-          DESTINATION_ADDRESS,
-        )
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        assert(_err.message.includes(UNSUPPORTED_CHAIN_ID_ERROR))
       }
     })
 
@@ -433,23 +328,6 @@ describe('Erc20Vault Tests', () => {
       assert(decodedEvent[2].eq(BigNumber.from(TOKEN_AMOUNT)))
       assert.strictEqual(decodedEvent[3], DESTINATION_ADDRESS)
       assert.strictEqual(decodedEvent[4], userData)
-    })
-
-    it('Should fail to peg in automatically on ERC777 send if destination chain ID is not supported', async () => {
-      const unsupportedDestinationId = '0xd3adb33f'
-      assert(!await VAULT_CONTRACT.SUPPORTED_DESTINATION_CHAIN_IDS(unsupportedDestinationId))
-      const tag = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PEG_IN_TAG))
-      const userData = ABI_CODEC.encode(
-        [ 'bytes32', 'string', 'bytes4' ],
-        [ tag, DESTINATION_ADDRESS, unsupportedDestinationId ],
-      )
-      await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
-      try {
-        await ERC777_CONTRACT.connect(TOKEN_HOLDER).send(VAULT_ADDRESS, TOKEN_AMOUNT, userData)
-        assert.fail('Should not have succeeded!')
-      } catch (_err) {
-        assert(_err.message.includes(UNSUPPORTED_CHAIN_ID_ERROR))
-      }
     })
 
     it('Should fail to automatically peg-in if encoded user data is incorrect', async () => {
