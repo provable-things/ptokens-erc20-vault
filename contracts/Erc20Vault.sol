@@ -124,15 +124,15 @@ contract Erc20Vault is
         external
         returns (bool)
     {
-        return pegIn(_tokenAmount, _tokenAddress, _destinationAddress, _destinationChainId, "");
+        return pegIn(_tokenAmount, _tokenAddress, _destinationAddress, "", _destinationChainId);
     }
 
     function pegIn(
         uint256 _tokenAmount,
         address _tokenAddress,
         string memory _destinationAddress,
-        bytes4 _destinationChainId,
-        bytes memory _userData
+        bytes memory _userData,
+        bytes4 _destinationChainId
     )
         public
         onlySupportedTokens(_tokenAddress)

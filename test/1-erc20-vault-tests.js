@@ -263,12 +263,12 @@ describe('Erc20Vault Tests', () => {
       const tokenHolderBalanceBeforePegIn = await ERC20_TOKEN_CONTRACT.balanceOf(TOKEN_HOLDER_ADDRESS)
       const vaultTokenBalanceBefore = await ERC20_TOKEN_CONTRACT.balanceOf(VAULT_ADDRESS)
       const tx = await VAULT_CONTRACT
-        .connect(TOKEN_HOLDER)['pegIn(uint256,address,string,bytes4,bytes)'](
+        .connect(TOKEN_HOLDER)['pegIn(uint256,address,string,bytes,bytes4)'](
           TOKEN_AMOUNT,
           ERC20_TOKEN_ADDRESS,
           DESTINATION_ADDRESS,
-          DESTINATION_CHAIN_ID,
           USER_DATA,
+          DESTINATION_CHAIN_ID,
         )
       const receipt = await tx.wait()
       assertPegInEvent(
