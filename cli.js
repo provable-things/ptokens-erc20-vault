@@ -25,11 +25,11 @@ const TOKEN_FLAG = '--token'
 const VERSION_ARG = '--version'
 const NETWORK_ARG = '<network>'
 const ETH_ADDRESS_ARG = '<ethAddress>'
-const DEPLOY_VAULT_CMD = 'deployVault'
-const VERIFY_VAULT_CMD = 'verifyVault'
 const SET_PNETWORK_CMD = 'setPNetwork'
 const GET_PNETWORK_CMD = 'getPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
+const DEPLOY_VAULT_CMD = 'deployContract'
+const VERIFY_VAULT_CMD = 'verifyContract'
 const GET_WETH_ADDRESS = 'getWEthAddress'
 const TOKEN_ADDRESS_ARG = '<tokenAddress>'
 const USER_DATA_OPTIONAL_ARG = '--userData'
@@ -38,11 +38,11 @@ const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const TOKENS_ARG = `${TOKEN_FLAG}=<ethAddress>`
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
 const IS_TOKEN_SUPPORTED_CMD = 'isTokenSupported'
+const GET_ENCODED_INIT_ARGS_CMD = 'encodeInitArgs'
 const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
-const GET_ENCODED_INIT_ARGS_CMD = 'getEncodedInitArgs'
 const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
 const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
 const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
@@ -89,15 +89,15 @@ const USAGE_INFO = `
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
   ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
-  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
   ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
   ${GET_SUPPORTED_TOKENS_CMD}    ❍ Show list of tokens supprted by the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${SHOW_WALLET_DETAILS_CMD}     ❍ Decrypts the private key and shows address & balance information.
   ${IS_TOKEN_SUPPORTED_CMD}      ❍ Is token at ${ETH_ADDRESS_ARG} supported in vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${GET_ENCODED_INIT_ARGS_CMD}    ❍ Calculate the initializer function arguments in ABI encoded format.
+  ${GET_ENCODED_INIT_ARGS_CMD}        ❍ Calculate the initializer function arguments in ABI encoded format.
   ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
+  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
 
 ❍ Options:
   ${HELP_ARG}                ❍ Show this message.
