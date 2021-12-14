@@ -87,8 +87,8 @@ const USAGE_INFO = `
 ❍ Commands:
   ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
-  ${DEPLOY_VAULT_CMD}           ❍ Deploy the ERC20 vault logic contract.
-  ${VERIFY_VAULT_CMD}           ❍ Verify a deployed pToken logic contract.
+  ${DEPLOY_VAULT_CMD}        ❍ Deploy the ERC20 vault logic contract.
+  ${VERIFY_VAULT_CMD}        ❍ Verify a deployed pToken logic contract.
   ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
