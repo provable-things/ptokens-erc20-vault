@@ -544,6 +544,7 @@ describe('Erc20Vault Tests', () => {
 
       it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
         const PEG_OUT_GAS_LIMIT = 450e3
+        /* eslint-disable-next-line max-len */
         const PATH = 'contracts/test-contracts/ContractWithExpensiveFallbackFunction.sol:ContractWithExpensiveFallbackFunction'
         const expensiveFallbackContract = await deployNonUpgradeableContract(PATH)
         const expensiveFallbackContractAddress = prop(ADDRESS_PROP, expensiveFallbackContract)

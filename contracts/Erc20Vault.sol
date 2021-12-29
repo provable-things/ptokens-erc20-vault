@@ -285,4 +285,15 @@ contract Erc20Vault is
     receive() external payable {
         require(msg.sender == address(weth));
     }
+
+    function changeOriginChainId(
+        bytes4 _newOriginChainId
+    )
+        public
+        onlyPNetwork
+        returns (bool success)
+    {
+        ORIGIN_CHAIN_ID = _newOriginChainId;
+        return true;
+    }
 }
