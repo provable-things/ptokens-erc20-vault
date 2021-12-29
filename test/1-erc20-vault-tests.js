@@ -30,7 +30,7 @@ describe('Erc20Vault Tests', () => {
   const DESTINATION_ADDRESS = 'aneosaddress'
   const VAULT_PATH = 'contracts/Erc20Vault.sol:Erc20Vault'
   const NON_PNETWORK_ERROR = 'Caller must be PNETWORK address!'
-  const ERC777_CONTRACT_PATH = 'contracts/Erc777Token.sol:Erc777Token'
+  const ERC777_CONTRACT_PATH = 'contracts/test-contracts/Erc777Token.sol:Erc777Token'
 
   let PNETWORK,
     NON_PNETWORK,
@@ -57,14 +57,14 @@ describe('Erc20Vault Tests', () => {
     PNETWORK_ADDRESS = prop(ADDRESS_PROP, PNETWORK)
     TOKEN_HOLDER = signers[1]
     TOKEN_HOLDER_ADDRESS = prop(ADDRESS_PROP, TOKEN_HOLDER)
-    WETH_CONTRACT = await deployNonUpgradeableContract('contracts/WETH.sol:WETH')
+    WETH_CONTRACT = await deployNonUpgradeableContract('contracts/wEth/WETH.sol:WETH')
     WETH_ADDRESS = prop(ADDRESS_PROP, WETH_CONTRACT)
     VAULT_CONTRACT = await deployUpgradeableContract(
       VAULT_PATH,
       [ WETH_ADDRESS, [], ORIGIN_CHAIN_ID ]
     )
     VAULT_ADDRESS = prop(ADDRESS_PROP, VAULT_CONTRACT)
-    ERC20_TOKEN_CONTRACT = await deployNonUpgradeableContract('contracts/Erc20Token.sol:Erc20Token')
+    ERC20_TOKEN_CONTRACT = await deployNonUpgradeableContract('contracts/test-contracts/Erc20Token.sol:Erc20Token')
     ERC20_TOKEN_ADDRESS = prop(ADDRESS_PROP, ERC20_TOKEN_CONTRACT)
     NON_OWNED_VAULT_CONTRACT = VAULT_CONTRACT.connect(NON_PNETWORK)
     await ERC20_TOKEN_CONTRACT.transfer(TOKEN_HOLDER_ADDRESS, TOKEN_HOLDER_BALANCE)
@@ -431,7 +431,7 @@ describe('Erc20Vault Tests', () => {
 
     it('Pegging out to ERC777 recipient with user data will call tokens received hook', async () => {
       const userData = '0xdecaff'
-      const ERC777_RECIPIENT_PATH = 'contracts/Erc777Recipient.sol:Erc777Recipient'
+      const ERC777_RECIPIENT_PATH = 'contracts/test-contracts/Erc777Recipient.sol:Erc777Recipient'
       await giveAllowance(ERC777_CONTRACT.connect(TOKEN_HOLDER), VAULT_ADDRESS, TOKEN_AMOUNT)
       const ERC777_RECIPIENT_CONTRACT = await deployNonUpgradeableContract(ERC777_RECIPIENT_PATH)
       const ERC777_RECIPIENT_ADDRESS = prop(ADDRESS_PROP, ERC777_RECIPIENT_CONTRACT)
@@ -544,7 +544,7 @@ describe('Erc20Vault Tests', () => {
 
       it('Should peg out wETH to smart-contract w/ expensive fallback function', async () => {
         const PEG_OUT_GAS_LIMIT = 450e3
-        const PATH = 'contracts/ContractWithExpensiveFallbackFunction.sol:ContractWithExpensiveFallbackFunction'
+        const PATH = 'contracts/test-contracts/ContractWithExpensiveFallbackFunction.sol:ContractWithExpensiveFallbackFunction'
         const expensiveFallbackContract = await deployNonUpgradeableContract(PATH)
         const expensiveFallbackContractAddress = prop(ADDRESS_PROP, expensiveFallbackContract)
         const expensiveContractEthBalanceBeforePegout = await ethers.provider.getBalance(
@@ -576,7 +576,7 @@ describe('Erc20Vault Tests', () => {
 
       it('Should be able to peg out wETH with user data to a smart-contract', async () => {
         const userData = '0xdecaff'
-        const ERC777_RECIPIENT_PATH = 'contracts/Erc777Recipient.sol:Erc777Recipient'
+        const ERC777_RECIPIENT_PATH = 'contracts/test-contracts/Erc777Recipient.sol:Erc777Recipient'
         await giveAllowance(ERC777_CONTRACT.connect(TOKEN_HOLDER), VAULT_ADDRESS, TOKEN_AMOUNT)
         const ERC777_RECIPIENT_CONTRACT = await deployNonUpgradeableContract(ERC777_RECIPIENT_PATH)
         const ERC777_RECIPIENT_ADDRESS = prop(ADDRESS_PROP, ERC777_RECIPIENT_CONTRACT)
@@ -623,7 +623,7 @@ describe('Erc20Vault Tests', () => {
       it('Pegging out wETH Should not be susceptible to re-entrancy attack', async () => {
         const calldata = new ethers.utils.Interface([ 'function attempReEntrancyAttack()' ])
           .encodeFunctionData('attempReEntrancyAttack', [])
-        const CONTRACT_PATH = 'contracts/ContractWithReEntrancyAttack.sol:ContractWithReEntrancyAttack'
+        const CONTRACT_PATH = 'contracts/test-contracts/ContractWithReEntrancyAttack.sol:ContractWithReEntrancyAttack'
         const reEntrancyAttackContract = await deployNonUpgradeableContract(CONTRACT_PATH)
         const reEntrancyAttackContractAddress = prop(ADDRESS_PROP, reEntrancyAttackContract)
         const reEntrancyAttackContractEthBalanceBeforePegout = await ethers.provider.getBalance(
