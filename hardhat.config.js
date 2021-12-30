@@ -18,6 +18,7 @@ const SUPPORTED_NETWORKS = [
   'rinkeby',
   'ropsten',
   'ambrosTestnet',
+  'ethMainnet',
 ]
 
 const getEnvVarOrThow = _name => {
