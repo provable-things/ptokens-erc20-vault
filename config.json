@@ -1,8 +1,0 @@
-{
-  ENDPOINT: "",
-  GAS_PRICE: 20e9,
-  PRIVATE_KEY: ""
-  WETH_ADDRESSS: "",
-  TOKENS_TO_SUPPORT: [],
-  ETHERSCAN_API_KEY: ""
-}

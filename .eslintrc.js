@@ -16,9 +16,8 @@ module.exports = {
   },
   // ADD ANY GLOBALS HERE!
   globals: {
-    "web3": false,
-    "contract": false,
-    "artifacts": false
+    "ethers": false,
+    "upgrades": false,
   },
   rules: {
     "max-len": ["error", 120, 2, {
@@ -87,7 +86,8 @@ module.exports = {
       allow: [
         "warn",
         "error",
-        "info"
+        "info",
+        "table",
       ]
     }],
     'no-warning-comments': [1, {
@@ -114,9 +114,8 @@ module.exports = {
     'no-mixed-requires': 2,
     'no-new-require': 0,
     'no-path-concat': 1,
-    'no-sync': 1
+    //'no-sync': 1
     // stylistic (leaving up to standard)
-
     // ECMAScript 6 (tbd)
   }
 }
