@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /* eslint-disable max-len */
 
-require('dotenv').config()
+const { getEnvConfiguration } = require('./lib/get-env-configuration')
 const { docopt } = require('docopt')
 const { pegIn } = require('./lib/peg-in')
 const { version } = require('./package.json')
@@ -158,4 +158,6 @@ const main = _ => {
   }
 }
 
-main().catch(_err => console.error('✘', _err.message))
+getEnvConfiguration()
+  .then(main)
+  .catch(_err => console.error('✘', _err.message))
