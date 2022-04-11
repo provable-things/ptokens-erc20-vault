@@ -32,6 +32,7 @@
     "ethers": "^5.5.1",
     "hardhat": "^2.6.8",
     "hardhat-erc1820": "^0.1.0",
+    "ptokens-utils": "github:provable-things/ptokens-utils.js#feat/add-new-utils",
     "ramda": "^0.27.1",
     "rewire": "^5.0.0",
     "truffle-flattener": "^1.5.0"
