@@ -5,7 +5,7 @@
   "main": "cli.js",
   "scripts": {
     "test": "npm run tests",
-    "tests": "npx hardhat test",
+    "tests": "ENDPOINT=http://localhost:8545 npx hardhat test",
     "compile": "npx hardhat compile"
   },
   "repository": {
