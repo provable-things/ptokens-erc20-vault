@@ -1,7 +1,5 @@
 #!/usr/bin/env node
 /* eslint-disable max-len */
-
-require('dotenv').config()
 const { docopt } = require('docopt')
 const { pegIn } = require('./lib/peg-in')
 const { version } = require('./package.json')

@@ -3,8 +3,8 @@
 /build
 **flattened**
 /.openzeppelin
-.env
+*.env
 /artifacts
 /cache
 *.gpg
-!private-key.gpg
+private-key*
