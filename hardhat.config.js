@@ -36,19 +36,36 @@ const getAllSupportedNetworks = _ =>
 const addLocalNetwork = _allSupportedNetworks =>
   assoc('localhost', { url: 'http://localhost:8545' }, _allSupportedNetworks)
 
+const addHardhatNetwork = _allSupportedNetworks =>
+  assoc('hardhat', { hardfork: 'istanbul' }, _allSupportedNetworks)
+
 const getAllNetworks = _ =>
-  addLocalNetwork(getAllSupportedNetworks())
+  addHardhatNetwork(addLocalNetwork(getAllSupportedNetworks()))
+
 
 module.exports = {
   networks: getAllNetworks(),
   solidity: {
-    version: '0.8.2',
-    settings: {
-      optimizer: {
-        runs: 200,
-        enabled: true,
-      }
-    }
+    compilers: [
+      {
+        version: '0.8.2',
+        settings: {
+          optimizer: {
+            runs: 200,
+            enabled: true,
+          }
+        }
+      },
+      {
+        version: '0.4.18',
+        settings: {
+          optimizer: {
+            runs: 200,
+            enabled: true,
+          }
+        }
+      },
+    ],
   },
   etherscan: {
     apiKey: process.env[ETHERSCAN_ENV_VAR_KEY]
