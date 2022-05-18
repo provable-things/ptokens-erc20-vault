@@ -29,6 +29,7 @@ describe('Erc20Vault Tests', () => {
   const USER_DATA = '0x1337'
   const DESTINATION_ADDRESS = 'aneosaddress'
   const VAULT_PATH = 'contracts/Erc20Vault.sol:Erc20Vault'
+  const UNWRAPPER_PATH = 'contracts/weth-unwrapper/WEthUnwrapper.sol:WEthUnwrapper'
   const NON_PNETWORK_ERROR = 'Caller must be PNETWORK address!'
   const ERC777_CONTRACT_PATH = 'contracts/test-contracts/Erc777Token.sol:Erc777Token'
 
@@ -42,6 +43,8 @@ describe('Erc20Vault Tests', () => {
     ERC777_ADDRESS,
     ERC777_CONTRACT,
     PNETWORK_ADDRESS,
+    UNWRAPPER_ADDRESS,
+    UNWRAPPER_CONTRACT,
     ERC20_TOKEN_ADDRESS,
     NON_PNETWORK_ADDRESS,
     TOKEN_HOLDER_ADDRESS,
@@ -64,6 +67,11 @@ describe('Erc20Vault Tests', () => {
       [ WETH_ADDRESS, [], ORIGIN_CHAIN_ID ]
     )
     VAULT_ADDRESS = prop(ADDRESS_PROP, VAULT_CONTRACT)
+    UNWRAPPER_CONTRACT = await deployNonUpgradeableContract(
+      UNWRAPPER_PATH,
+      [ WETH_ADDRESS ]
+    )
+    UNWRAPPER_ADDRESS = prop(ADDRESS_PROP, UNWRAPPER_CONTRACT)
     ERC20_TOKEN_CONTRACT = await deployNonUpgradeableContract('contracts/test-contracts/Erc20Token.sol:Erc20Token')
     ERC20_TOKEN_ADDRESS = prop(ADDRESS_PROP, ERC20_TOKEN_CONTRACT)
     NON_OWNED_VAULT_CONTRACT = VAULT_CONTRACT.connect(NON_PNETWORK)
@@ -73,6 +81,7 @@ describe('Erc20Vault Tests', () => {
     ERC777_CONTRACT = await deployNonUpgradeableContract(ERC777_CONTRACT_PATH)
     ERC777_ADDRESS = prop(ADDRESS_PROP, ERC777_CONTRACT)
     await VAULT_CONTRACT.addSupportedToken(ERC777_ADDRESS)
+    await VAULT_CONTRACT.setWEthUnwrapperAddress(UNWRAPPER_ADDRESS)
     await ERC777_CONTRACT.send(TOKEN_HOLDER_ADDRESS, TOKEN_AMOUNT, EMPTY_USER_DATA)
     await ERC777_CONTRACT.connect(TOKEN_HOLDER).approve(VAULT_ADDRESS, TOKEN_AMOUNT)
   })
