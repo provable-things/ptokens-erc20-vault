@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 import "./wEth/IWETH.sol";
 import "./Withdrawable.sol";
+import "./unwrapper/IUnwrapper.sol";
+import "hardhat/console.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC777/IERC777Upgradeable.sol";
@@ -28,6 +30,7 @@ contract Erc20Vault is
     address public PNETWORK;
     IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
+    address private wEthUnwrapperAddress;
 
     event PegIn(
         address _tokenAddress,
@@ -38,6 +41,11 @@ contract Erc20Vault is
         bytes4 _originChainId,
         bytes4 _destinationChainId
     );
+
+    function setWEthUnwrapperAddress(address _address) public {
+        require(wEthUnwrapperAddress == address(0), "wEth address already set!");
+        wEthUnwrapperAddress = _address;
+    }
 
     function initialize(
         address _weth,
@@ -233,7 +241,16 @@ contract Erc20Vault is
         internal
         returns (bool)
     {
-        weth.withdraw(_tokenAmount);
+        // weth.withdraw(_tokenAmount);
+
+        console.log("unwrapper balance: ", address(wEthUnwrapperAddress).balance);
+
+        weth.approve(wEthUnwrapperAddress, _tokenAmount);
+        IUnwrapper(wEthUnwrapperAddress).unwrap(_tokenAmount);
+
+        // console.log("vault balance: ", address(this).balance);
+
+        // bool success = true;
         // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
         // on the provided 2300 gas stipend and instead forwards all available gas onwards.
         // SOURCE: https://consensys.net/diligence/blog/2019/09/stop-using-soliditys-transfer-now

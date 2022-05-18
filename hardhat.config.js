@@ -36,8 +36,12 @@ const getAllSupportedNetworks = _ =>
 const addLocalNetwork = _allSupportedNetworks =>
   assoc('localhost', { url: 'http://localhost:8545' }, _allSupportedNetworks)
 
-const getAllNetworks = _ =>
-  addLocalNetwork(getAllSupportedNetworks())
+const addHardHatNetwork = _allSupportedNetworks =>
+  assoc('hardhat', { hardfork: 'constantinople' }, _allSupportedNetworks)
+
+const getAllNetworks = _ => 
+  addLocalNetwork(addHardHatNetwork(getAllSupportedNetworks()))
+  
 
 module.exports = {
   networks: getAllNetworks(),
