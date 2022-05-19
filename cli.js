@@ -16,6 +16,7 @@ const { showSuggestedFees } = require('./lib/show-suggested-fees')
 const { getSupportedTokens } = require('./lib/get-supported-tokens')
 const { deployUnwrapperContract } = require('./lib/deploy-unwrapper')
 const { getEncodedInitArgs } = require('./lib/get-encoded-init-args')
+const { setWEthUnwrapperAddress } = require('./lib/set-weth-unwrapper-address')
 const { showExistingContractAddresses } = require('./lib/show-existing-contract-addresses')
 
 const HELP_ARG = '--help'
@@ -44,6 +45,7 @@ const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const ADD_SUPPORTED_TOKEN_CMD = 'addSupportedToken'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
+const SET_WETH_ADDRESS_CMD = 'setWEthUnwrapperAddress'
 const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContract'
 const DEPLOY_UNWRAPPER_CMD = 'deployUnwrapperContract'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
@@ -87,6 +89,7 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${DEPLOY_UNWRAPPER_CMD} ${WETH_ADDRESS_ARG}
   ${TOOL_NAME} ${IS_TOKEN_SUPPORTED_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${ADD_SUPPORTED_TOKEN_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
+  ${TOOL_NAME} ${SET_WETH_ADDRESS_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${VERIFY_UNWRAPPER_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG} ${WETH_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${ORIGIN_CHAIN_ID_ARG} [${TOKENS_ARG}...]
   ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${DESTINATION_CHAIN_ID_ARG} [${USER_DATA_ARG}]
@@ -107,6 +110,7 @@ const USAGE_INFO = `
   ${GET_ENCODED_INIT_ARGS_CMD}        ❍ Calculate the initializer function arguments in ABI encoded format.
   ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
   ${ADD_SUPPORTED_TOKEN_CMD}      ❍ Adds token at ${ETH_ADDRESS_ARG} to the supported tokens in vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${SET_WETH_ADDRESS_CMD}       ❍ Sets the WETH Unwrapper contract at ${ETH_ADDRESS_ARG} to the supported tokens in vault at ${DEPLOYED_ADDRESS_ARG}.
   ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
 
 ❍ Options:
@@ -150,6 +154,8 @@ const main = _ => {
     return setPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
   } else if (CLI_ARGS[ADD_SUPPORTED_TOKEN_CMD]) {
     return addSupportedToken(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
+  } else if (CLI_ARGS[SET_WETH_ADDRESS_CMD]) {
+    return setWEthUnwrapperAddress(CLI_ARGS[DEPLOYED_ADDRESS_ARG], CLI_ARGS[ETH_ADDRESS_ARG])
   } else if (CLI_ARGS[GET_PNETWORK_CMD]) {
     return getPNetwork(CLI_ARGS[DEPLOYED_ADDRESS_ARG])
   } else if (CLI_ARGS[GET_SUPPORTED_TOKENS_CMD]) {
