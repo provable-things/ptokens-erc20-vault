@@ -240,7 +240,7 @@ contract Erc20Vault is
         returns (bool)
     {
         weth.approve(wEthUnwrapperAddress, _tokenAmount);
-        IUnwrapper(wEthUnwrapperAddress).unwrap(_tokenAmount);
+        IWEthUnwrapper(wEthUnwrapperAddress).unwrap(_tokenAmount);
 
         // NOTE: This is the latest recommendation (@ time of writing) for transferring ETH. This no longer relies
         // on the provided 2300 gas stipend and instead forwards all available gas onwards.
