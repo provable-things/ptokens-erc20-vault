@@ -25,7 +25,7 @@ module.exports = {
       ignoreComments: false,
       ignoreRegExpLiterals: true,
       ignoreStrings: false,
-      ignoreTemplateLiterals: false,
+      ignoreTemplateLiterals: true,
     }],
     quotes: [2, 'single', { avoidEscape: true }],
     'standard/computed-property-even-spacing': 0,
