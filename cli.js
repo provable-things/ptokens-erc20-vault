@@ -8,11 +8,13 @@ const { getPNetwork } = require('./lib/get-pnetwork')
 const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { getWEthAddress } = require('./lib/get-weth-address')
+const { verifyUnwrapper } = require('./lib/verify-unwrapper')
 const { isTokenSupported } = require('./lib/is-token-supported')
 const { showWalletDetails } = require('./lib/show-wallet-details')
 const { addSupportedToken } = require('./lib/add-supported-token')
 const { showSuggestedFees } = require('./lib/show-suggested-fees')
 const { getSupportedTokens } = require('./lib/get-supported-tokens')
+const { deployUnwrapperContract } = require('./lib/deploy-unwrapper')
 const { getEncodedInitArgs } = require('./lib/get-encoded-init-args')
 const { showExistingContractAddresses } = require('./lib/show-existing-contract-addresses')
 
@@ -27,8 +29,8 @@ const ETH_ADDRESS_ARG = '<ethAddress>'
 const SET_PNETWORK_CMD = 'setPNetwork'
 const GET_PNETWORK_CMD = 'getPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
-const DEPLOY_VAULT_CMD = 'deployContract'
-const VERIFY_VAULT_CMD = 'verifyContract'
+const DEPLOY_VAULT_CMD = 'deployVaultContract'
+const VERIFY_VAULT_CMD = 'verifyVaultContract'
 const GET_WETH_ADDRESS = 'getWEthAddress'
 const TOKEN_ADDRESS_ARG = '<tokenAddress>'
 const USER_DATA_OPTIONAL_ARG = '--userData'
@@ -42,6 +44,8 @@ const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const ADD_SUPPORTED_TOKEN_CMD = 'addSupportedToken'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
+const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContract'
+const DEPLOY_UNWRAPPER_CMD = 'deployUnwrapperContract'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
 const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
 const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
@@ -80,8 +84,10 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${GET_SUPPORTED_TOKENS_CMD} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
+  ${TOOL_NAME} ${DEPLOY_UNWRAPPER_CMD} ${WETH_ADDRESS_ARG}
   ${TOOL_NAME} ${IS_TOKEN_SUPPORTED_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${ADD_SUPPORTED_TOKEN_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
+  ${TOOL_NAME} ${VERIFY_UNWRAPPER_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG} ${WETH_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_ENCODED_INIT_ARGS_CMD} ${WETH_ADDRESS_ARG} ${ORIGIN_CHAIN_ID_ARG} [${TOKENS_ARG}...]
   ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${DESTINATION_CHAIN_ID_ARG} [${USER_DATA_ARG}]
 
@@ -89,7 +95,9 @@ const USAGE_INFO = `
   ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
   ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
   ${DEPLOY_VAULT_CMD}        ❍ Deploy the ERC20 vault logic contract.
+  ${DEPLOY_UNWRAPPER_CMD}    ❍ Deploy the WETH unwrapper contract.
   ${VERIFY_VAULT_CMD}        ❍ Verify a deployed pToken logic contract.
+  ${VERIFY_UNWRAPPER_CMD}        ❍ Verify a deployed pToken logic contract.
   ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
   ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
@@ -126,8 +134,16 @@ const main = _ => {
     return showSuggestedFees()
   } else if (CLI_ARGS[DEPLOY_VAULT_CMD]) {
     return deployVault()
+  } else if (CLI_ARGS[DEPLOY_UNWRAPPER_CMD]) {
+    return deployUnwrapperContract(CLI_ARGS[WETH_ADDRESS_ARG])
   } else if (CLI_ARGS[VERIFY_VAULT_CMD]) {
     return verifyVault(CLI_ARGS[NETWORK_ARG], CLI_ARGS[DEPLOYED_ADDRESS_ARG])
+  } else if (CLI_ARGS[VERIFY_UNWRAPPER_CMD]) {
+    return verifyUnwrapper(
+      CLI_ARGS[NETWORK_ARG],
+      CLI_ARGS[DEPLOYED_ADDRESS_ARG],
+      CLI_ARGS[WETH_ADDRESS_ARG]
+    )
   } else if (CLI_ARGS[SHOW_EXISTING_CONTRACTS_CMD]) {
     return showExistingContractAddresses()
   } else if (CLI_ARGS[SET_PNETWORK_CMD]) {
