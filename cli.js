@@ -8,7 +8,7 @@ const { getPNetwork } = require('./lib/get-pnetwork')
 const { deployVault } = require('./lib/deploy-vault')
 const { verifyVault } = require('./lib/verify-vault')
 const { getWEthAddress } = require('./lib/get-weth-address')
-const { verifyUnwrapper } = require('./lib/verify-unwrapper')
+const { verifyUnwrapperContract } = require('./lib/verify-unwrapper')
 const { isTokenSupported } = require('./lib/is-token-supported')
 const { showWalletDetails } = require('./lib/show-wallet-details')
 const { addSupportedToken } = require('./lib/add-supported-token')
@@ -46,7 +46,7 @@ const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const ADD_SUPPORTED_TOKEN_CMD = 'addSupportedToken'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
 const SET_WETH_UNWRAPPER_ADDRESS = 'setWEthUnwrapperAddress'
-const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContract'
+const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContractContract'
 const DEPLOY_UNWRAPPER_CMD = 'deployUnwrapperContract'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
 const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
@@ -143,7 +143,7 @@ const main = _ => {
   } else if (CLI_ARGS[VERIFY_VAULT_CMD]) {
     return verifyVault(CLI_ARGS[NETWORK_ARG], CLI_ARGS[DEPLOYED_ADDRESS_ARG])
   } else if (CLI_ARGS[VERIFY_UNWRAPPER_CMD]) {
-    return verifyUnwrapper(
+    return verifyUnwrapperContract(
       CLI_ARGS[NETWORK_ARG],
       CLI_ARGS[DEPLOYED_ADDRESS_ARG],
       CLI_ARGS[WETH_ADDRESS_ARG]
