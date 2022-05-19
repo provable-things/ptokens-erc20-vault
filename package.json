@@ -6,7 +6,8 @@
   "scripts": {
     "test": "npm run tests",
     "tests": "ENDPOINT=http://localhost:8545 npx hardhat test",
-    "compile": "npx hardhat compile"
+    "compile": "npx hardhat compile",
+    "lint": "eslint ."
   },
   "repository": {
     "type": "git",
