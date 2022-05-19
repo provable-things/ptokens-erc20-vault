@@ -239,8 +239,6 @@ contract Erc20Vault is
         internal
         returns (bool)
     {
-        // weth.withdraw(_tokenAmount);
-
         weth.approve(wEthUnwrapperAddress, _tokenAmount);
         IUnwrapper(wEthUnwrapperAddress).unwrap(_tokenAmount);
 
