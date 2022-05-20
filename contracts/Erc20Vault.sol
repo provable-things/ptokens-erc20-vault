@@ -239,6 +239,12 @@ contract Erc20Vault is
         internal
         returns (bool)
     {
+        // NOTE: This is a mitigation for the breaking changes introduced
+        // by the Istanbul hard fork which caused the [out of gas] errors
+        // due to opcode price changes which left too little gas remaining
+        // in the stipend sent to the transfer method when called by a
+        // proxied contract.
+        // See: https://forum.openzeppelin.com/t/openzeppelin-upgradeable-contracts-affected-by-istanbul-hardfork/1616)
         weth.approve(wEthUnwrapperAddress, _tokenAmount);
         IWEthUnwrapper(wEthUnwrapperAddress).unwrap(_tokenAmount);
 
