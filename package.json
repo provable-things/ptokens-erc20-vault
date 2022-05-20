@@ -1,12 +1,13 @@
 {
   "name": "ptokens-erc20-vault-smart-contract",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "The pToken ERC20 vault smart-contract & CLI",
   "main": "cli.js",
   "scripts": {
     "test": "npm run tests",
     "tests": "ENDPOINT=http://localhost:8545 npx hardhat test",
-    "compile": "npx hardhat compile"
+    "compile": "npx hardhat compile",
+    "lint": "npx eslint ."
   },
   "repository": {
     "type": "git",
