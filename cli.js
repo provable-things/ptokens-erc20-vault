@@ -184,4 +184,4 @@ const main = _ => {
   }
 }
 
-main().catch(_err => console.error('✘', _err.message))
+main().catch(_err => console.error(_err) || process.exit(1))
