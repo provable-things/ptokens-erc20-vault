@@ -30,12 +30,12 @@ const ETH_ADDRESS_ARG = '<ethAddress>'
 const SET_PNETWORK_CMD = 'setPNetwork'
 const GET_PNETWORK_CMD = 'getPNetwork'
 const WETH_ADDRESS_ARG = '<wEthAddress>'
-const DEPLOY_VAULT_CMD = 'deployVaultContract'
-const VERIFY_VAULT_CMD = 'verifyVaultContract'
 const GET_WETH_ADDRESS = 'getWEthAddress'
 const TOKEN_ADDRESS_ARG = '<tokenAddress>'
 const USER_DATA_OPTIONAL_ARG = '--userData'
 const ORIGIN_CHAIN_ID_ARG = '<originChainId>'
+const DEPLOY_VAULT_CMD = 'deployVaultContract'
+const VERIFY_VAULT_CMD = 'verifyVaultContract'
 const FLATTEN_CONTRACT_CMD = 'flattenContract'
 const TOKENS_ARG = `${TOKEN_FLAG}=<ethAddress>`
 const DEPLOYED_ADDRESS_ARG = '<deployedAddress>'
@@ -45,13 +45,13 @@ const SHOW_SUGGESTED_FEES_CMD = 'showSuggestedFees'
 const SHOW_WALLET_DETAILS_CMD = 'showWalletDetails'
 const ADD_SUPPORTED_TOKEN_CMD = 'addSupportedToken'
 const GET_SUPPORTED_TOKENS_CMD = 'getSupportedTokens'
-const SET_WETH_UNWRAPPER_ADDRESS = 'setWEthUnwrapperAddress'
-const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContractContract'
+const VERIFY_UNWRAPPER_CMD = 'verifyUnwrapperContract'
 const DEPLOY_UNWRAPPER_CMD = 'deployUnwrapperContract'
 const DESTINATION_ADDRESS_ARG = '<destinationAddress>'
 const DESTINATION_CHAIN_ID_ARG = '<destinationChainId>'
 const USER_DATA_ARG = `${USER_DATA_OPTIONAL_ARG}=<hex>`
 const SHOW_EXISTING_CONTRACTS_CMD = 'showExistingContracts'
+const SET_WETH_UNWRAPPER_ADDRESS = 'setWEthUnwrapperAddress'
 
 const USAGE_INFO = `
 ❍ pTokens ERC20 Vault Command Line Interface
@@ -76,17 +76,17 @@ const USAGE_INFO = `
 ❍ Usage:
   ${TOOL_NAME} ${HELP_ARG}
   ${TOOL_NAME} ${VERSION_ARG}
-  ${TOOL_NAME} ${DEPLOY_VAULT_CMD}
   ${TOOL_NAME} ${FLATTEN_CONTRACT_CMD}
   ${TOOL_NAME} ${SHOW_SUGGESTED_FEES_CMD}
   ${TOOL_NAME} ${SHOW_WALLET_DETAILS_CMD}
+  ${TOOL_NAME} ${DEPLOY_VAULT_CMD}
   ${TOOL_NAME} ${SHOW_EXISTING_CONTRACTS_CMD}
   ${TOOL_NAME} ${GET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_WETH_ADDRESS} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${GET_SUPPORTED_TOKENS_CMD} ${DEPLOYED_ADDRESS_ARG}
-  ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
-  ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${DEPLOY_UNWRAPPER_CMD} ${WETH_ADDRESS_ARG}
+  ${TOOL_NAME} ${SET_PNETWORK_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
+  ${TOOL_NAME} ${VERIFY_VAULT_CMD} ${NETWORK_ARG} ${DEPLOYED_ADDRESS_ARG}
   ${TOOL_NAME} ${IS_TOKEN_SUPPORTED_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${ADD_SUPPORTED_TOKEN_CMD} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
   ${TOOL_NAME} ${SET_WETH_UNWRAPPER_ADDRESS} ${DEPLOYED_ADDRESS_ARG} ${ETH_ADDRESS_ARG}
@@ -95,38 +95,38 @@ const USAGE_INFO = `
   ${TOOL_NAME} ${PEG_IN_CMD} ${DEPLOYED_ADDRESS_ARG} ${AMOUNT_ARG} ${TOKEN_ADDRESS_ARG} ${DESTINATION_ADDRESS_ARG} ${DESTINATION_CHAIN_ID_ARG} [${USER_DATA_ARG}]
 
 ❍ Commands:
-  ${SET_PNETWORK_CMD}           ❍ Set the pNetwork address.
-  ${SHOW_SUGGESTED_FEES_CMD}     ❍ Show 'ethers.js' suggested fees.
-  ${DEPLOY_VAULT_CMD}        ❍ Deploy the ERC20 vault logic contract.
-  ${DEPLOY_UNWRAPPER_CMD}    ❍ Deploy the WETH unwrapper contract.
-  ${VERIFY_VAULT_CMD}        ❍ Verify a deployed pToken logic contract.
-  ${VERIFY_UNWRAPPER_CMD}    ❍ Verify a deployed WETH unwrapper contract.
-  ${GET_PNETWORK_CMD}           ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${GET_WETH_ADDRESS}        ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${FLATTEN_CONTRACT_CMD}       ❍ Flatten the contract in case manual verification is required.
-  ${GET_SUPPORTED_TOKENS_CMD}    ❍ Show list of tokens supprted by the vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${SHOW_WALLET_DETAILS_CMD}     ❍ Decrypts the private key and shows address & balance information.
-  ${IS_TOKEN_SUPPORTED_CMD}      ❍ Is token at ${ETH_ADDRESS_ARG} supported in vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${GET_ENCODED_INIT_ARGS_CMD}        ❍ Calculate the initializer function arguments in ABI encoded format.
-  ${SHOW_EXISTING_CONTRACTS_CMD} ❍ Show list of existing logic contract addresses on various blockchains.
-  ${ADD_SUPPORTED_TOKEN_CMD}      ❍ Adds token at ${ETH_ADDRESS_ARG} to the supported tokens in vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${SET_WETH_UNWRAPPER_ADDRESS}       ❍ Sets the WETH unwrapper contract at ${ETH_ADDRESS_ARG} in the vault at ${DEPLOYED_ADDRESS_ARG}.
-  ${PEG_IN_CMD}                 ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
+  ${SET_PNETWORK_CMD}              ❍ Set the pNetwork address.
+  ${SHOW_SUGGESTED_FEES_CMD}        ❍ Show 'ethers.js' suggested fees.
+  ${DEPLOY_UNWRAPPER_CMD}  ❍ Deploy the WETH unwrapper contract.
+  ${DEPLOY_VAULT_CMD}      ❍ Deploy the ERC20 vault logic contract.
+  ${VERIFY_VAULT_CMD}      ❍ Verify a deployed pToken logic contract.
+  ${VERIFY_UNWRAPPER_CMD}  ❍ Verify a deployed WETH unwrapper contract.
+  ${GET_PNETWORK_CMD}              ❍ Show the pNetwork address of the vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${GET_WETH_ADDRESS}           ❍ Show the wETH address set in the vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${FLATTEN_CONTRACT_CMD}          ❍ Flatten the contract in case manual verification is required.
+  ${GET_SUPPORTED_TOKENS_CMD}       ❍ Show list of tokens supprted by the vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${SHOW_WALLET_DETAILS_CMD}        ❍ Decrypts the private key and shows address & balance information.
+  ${IS_TOKEN_SUPPORTED_CMD}         ❍ Is token at ${ETH_ADDRESS_ARG} supported in vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${GET_ENCODED_INIT_ARGS_CMD}           ❍ Calculate the initializer function arguments in ABI encoded format.
+  ${SHOW_EXISTING_CONTRACTS_CMD}    ❍ Show list of existing logic contract addresses on various blockchains.
+  ${ADD_SUPPORTED_TOKEN_CMD}        ❍ Adds token at ${ETH_ADDRESS_ARG} to the supported tokens in vault at ${DEPLOYED_ADDRESS_ARG}.
+  ${PEG_IN_CMD}                    ❍ Peg in ${AMOUNT_ARG} of ${TOKEN_ADDRESS_ARG} to ${DESTINATION_ADDRESS_ARG} on ${DESTINATION_CHAIN_ID_ARG}.
+  ${SET_WETH_UNWRAPPER_ADDRESS}  ❍ Sets the WETH unwrapper contract at ${ETH_ADDRESS_ARG} in the vault at ${DEPLOYED_ADDRESS_ARG}.
 
 ❍ Options:
-  ${HELP_ARG}                ❍ Show this message.
-  ${VERSION_ARG}             ❍ Show tool version.
-  ${ETH_ADDRESS_ARG}          ❍ A valid ETH address.
-  ${TOKEN_ADDRESS_ARG}        ❍ ETH address of token.
-  ${DEPLOYED_ADDRESS_ARG}     ❍ The ETH address of the deployed vault.
-  ${DESTINATION_ADDRESS_ARG}  ❍ Destination address of a token peg in.
-  ${USER_DATA_ARG}      ❍ User data in hex format [default: 0x].
-  ${TOKENS_ARG}  ❍ ETH addresses of tokens the vault will support.
-  ${AMOUNT_ARG}              ❍ Amount of tokens in their most granular format.
-  ${ORIGIN_CHAIN_ID_ARG}       ❍ Metadata chain ID of the chain this contract is deployed to.
-  ${DESTINATION_CHAIN_ID_ARG}  ❍ Metadata chain ID of the chains this contract supports peg-ins to.
-  ${WETH_ADDRESS_ARG}         ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
-  ${NETWORK_ARG}             ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
+  ${HELP_ARG}                   ❍ Show this message.
+  ${VERSION_ARG}                ❍ Show tool version.
+  ${ETH_ADDRESS_ARG}             ❍ A valid ETH address.
+  ${TOKEN_ADDRESS_ARG}           ❍ ETH address of token.
+  ${DEPLOYED_ADDRESS_ARG}        ❍ The ETH address of the deployed vault.
+  ${DESTINATION_ADDRESS_ARG}     ❍ Destination address of a token peg in.
+  ${USER_DATA_ARG}         ❍ User data in hex format [default: 0x].
+  ${TOKENS_ARG}     ❍ ETH addresses of tokens the vault will support.
+  ${AMOUNT_ARG}                 ❍ Amount of tokens in their most granular format.
+  ${ORIGIN_CHAIN_ID_ARG}          ❍ Metadata chain ID of the chain this contract is deployed to.
+  ${DESTINATION_CHAIN_ID_ARG}     ❍ Metadata chain ID of the chains this contract supports peg-ins to.
+  ${WETH_ADDRESS_ARG}            ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
+  ${NETWORK_ARG}                ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
 `
 const main = _ => {
   const CLI_ARGS = docopt(USAGE_INFO, { version })
