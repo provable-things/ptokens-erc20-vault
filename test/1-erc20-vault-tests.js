@@ -29,8 +29,8 @@ describe('Erc20Vault Tests', () => {
   const USER_DATA = '0x1337'
   const DESTINATION_ADDRESS = 'aneosaddress'
   const VAULT_PATH = 'contracts/Erc20Vault.sol:Erc20Vault'
-  const UNWRAPPER_PATH = 'contracts/weth-unwrapper/WEthUnwrapper.sol:WEthUnwrapper'
   const NON_PNETWORK_ERROR = 'Caller must be PNETWORK address!'
+  const UNWRAPPER_PATH = 'contracts/weth-unwrapper/WEthUnwrapper.sol:WEthUnwrapper'
   const ERC777_CONTRACT_PATH = 'contracts/test-contracts/Erc777Token.sol:Erc777Token'
 
   let PNETWORK,
