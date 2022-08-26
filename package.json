@@ -1,6 +1,6 @@
 {
   "name": "ptokens-erc20-vault-smart-contract",
-  "version": "2.6.0",
+  "version": "2.7.0",
   "description": "The pToken ERC20 vault smart-contract & CLI",
   "main": "cli.js",
   "scripts": {
