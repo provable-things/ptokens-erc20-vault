@@ -66,11 +66,13 @@ const USAGE_INFO = `
   NOTE: Functions that make transactions require a private key. Please provide a GPG encrpyted file called
     'private-key.gpg' containing your key in the root of the repository. Create one via:
     'echo <your-private-key> | gpg -c --output private-key.gpg'
+    Multiple private keys may be provisioned, and the tool will provide you with a list to select from.
 
   NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
     ENDPOINT=<rpc-endpoint-for-blochain-to-interact-with>
+    Multiple such files may be provisioned, and the tool will provide you with a list to select from.
 
-  NOTE: To call the '${VERIFY_VAULT_CMD}' function, the following extra environment variable is required:
+  NOTE: To call functions which verify contracts, the following extra environment variable is required:
     ETHERSCAN_API_KEY=<api-key-for-automated-contract-verifications>
 
 ❍ Usage:

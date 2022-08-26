@@ -21,7 +21,6 @@ Then, to see the usage guide, run:
 Output:
 
 ```
-
 ❍ pTokens ERC20 Vault Command Line Interface
 
   Copyright Provable Things 2021
@@ -34,89 +33,71 @@ Output:
   NOTE: Functions that make transactions require a private key. Please provide a GPG encrpyted file called
     'private-key.gpg' containing your key in the root of the repository. Create one via:
     'echo <your-private-key> | gpg -c --output private-key.gpg'
+    Multiple private keys may be provisioned, and the tool will provide you with a list to select from.
 
   NOTE: The tool requires a '.env' file to exist in the root of the repository with the following info:
     ENDPOINT=<rpc-endpoint-for-blochain-to-interact-with>
+    Multiple such files may be provisioned, and the tool will provide you with a list to select from.
 
-  NOTE: To call the 'verifyVault' function, the following extra environment variable is required:
+  NOTE: To call functions which verify contracts, the following extra environment variable is required:
     ETHERSCAN_API_KEY=<api-key-for-automated-contract-verifications>
 
 ❍ Usage:
   cli.js --help
   cli.js --version
-  cli.js deployVault
   cli.js flattenContract
   cli.js showSuggestedFees
   cli.js showWalletDetails
+  cli.js deployVaultContract
   cli.js showExistingContracts
   cli.js getPNetwork <deployedAddress>
   cli.js getWEthAddress <deployedAddress>
   cli.js getSupportedTokens <deployedAddress>
-  cli.js verifyVault <network> <deployedAddress>
+  cli.js deployUnwrapperContract <wEthAddress>
   cli.js setPNetwork <deployedAddress> <ethAddress>
+  cli.js verifyVaultContract <network> <deployedAddress>
   cli.js isTokenSupported <deployedAddress> <ethAddress>
-  cli.js getEncodedInitArgs <wEthAddress> <tokensToSupport>...
-  cli.js pegIn <deployedAddress> <amount> <tokenAddress> <destinationAddress> --userData=<hex>
+  cli.js addSupportedToken <deployedAddress> <ethAddress>
+  cli.js setWEthUnwrapperAddress <deployedAddress> <ethAddress>
+  cli.js verifyUnwrapperContract <network> <deployedAddress> <wEthAddress>
+  cli.js encodeInitArgs <wEthAddress> <originChainId> [--token=<ethAddress>...]
+  cli.js pegIn <deployedAddress> <amount> <tokenAddress> <destinationAddress> <destinationChainId> [--userData=<hex>]
 
 ❍ Commands:
-  setPNetwork           ❍ Set the pNetwork address.
-  showSuggestedFees     ❍ Show 'ethers.js' suggested fees.
-  deployVault           ❍ Deploy the ERC20 vault logic contract.
-  verifyVault           ❍ Verify a deployed pToken logic contract.
-  pegIn                 ❍ Peg in <amount> of <tokenAddress> to <destinationAddress>.
-  getPNetwork           ❍ Show the pNetwork address of the vault at <deployedAddress>.
-  getWEthAddress        ❍ Show the wETH address set in the vault at <deployedAddress>.
-  flattenContract       ❍ Flatten the contract in case manual verification is required.
-  getSupportedTokens    ❍ Show list of tokens supprted by the vault at <deployedAddress>.
-  showWalletDetails     ❍ Decrypts the private key and shows address & balance information.
-  isTokenSupported      ❍ Is token at <ethAddress> supported in vault at <deployedAddress>.
-  getEncodedInitArgs    ❍ Calculate the initializer function arguments in ABI encoded format.
-  showExistingContracts ❍ Show list of existing logic contract addresses on various blockchains.
+  setPNetwork              ❍ Set the pNetwork address.
+  showSuggestedFees        ❍ Show 'ethers.js' suggested fees.
+  deployUnwrapperContract  ❍ Deploy the WETH unwrapper contract.
+  deployVaultContract      ❍ Deploy the ERC20 vault logic contract.
+  verifyVaultContract      ❍ Verify a deployed pToken logic contract.
+  verifyUnwrapperContract  ❍ Verify a deployed WETH unwrapper contract.
+  getPNetwork              ❍ Show the pNetwork address of the vault at <deployedAddress>.
+  getWEthAddress           ❍ Show the wETH address set in the vault at <deployedAddress>.
+  flattenContract          ❍ Flatten the contract in case manual verification is required.
+  getSupportedTokens       ❍ Show list of tokens supprted by the vault at <deployedAddress>.
+  showWalletDetails        ❍ Decrypts the private key and shows address & balance information.
+  isTokenSupported         ❍ Is token at <ethAddress> supported in vault at <deployedAddress>.
+  encodeInitArgs           ❍ Calculate the initializer function arguments in ABI encoded format.
+  showExistingContracts    ❍ Show list of existing logic contract addresses on various blockchains.
+  addSupportedToken        ❍ Adds token at <ethAddress> to the supported tokens in vault at <deployedAddress>.
+  pegIn                    ❍ Peg in <amount> of <tokenAddress> to <destinationAddress> on <destinationChainId>.
+  setWEthUnwrapperAddress  ❍ Sets the WETH unwrapper contract at <ethAddress> in the vault at <deployedAddress>.
 
 ❍ Options:
-  --help                ❍ Show this message.
-  --version             ❍ Show tool version.
-  <ethAddress>          ❍ A valid ETH address.
-  <tokenAddress>        ❍ ETH address of token.
-  <deployedAddress>     ❍ The ETH address of the deployed vault.
-  <destinationAddress>  ❍ Destination address of a token peg in.
-  --userData=<hex>      ❍ User data in hex format [default: 0x].
-  <amount>              ❍ Amount of tokens in their most granular format.
-  <tokensToSupport>     ❍ Addresses of ERC20 tokens the vault will support.
-  <wEthAddress>         ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
-  <network>             ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
+  --help                   ❍ Show this message.
+  --version                ❍ Show tool version.
+  <ethAddress>             ❍ A valid ETH address.
+  <tokenAddress>           ❍ ETH address of token.
+  <deployedAddress>        ❍ The ETH address of the deployed vault.
+  <destinationAddress>     ❍ Destination address of a token peg in.
+  --userData=<hex>         ❍ User data in hex format [default: 0x].
+  --token=<ethAddress>     ❍ ETH addresses of tokens the vault will support.
+  <amount>                 ❍ Amount of tokens in their most granular format.
+  <originChainId>          ❍ Metadata chain ID of the chain this contract is deployed to.
+  <destinationChainId>     ❍ Metadata chain ID of the chains this contract supports peg-ins to.
+  <wEthAddress>            ❍ The address for the wrapped ETH token on the blockchain to be deployed to.
+  <network>                ❍ Network the vault is deployed on. It must exist in the 'hardhat.config.json'.
 
 ```
-
-&nbsp;
-
-### :radioactive: Secrets:
-
-This tool requires a private key in order to sign transactions. GPG is used to protect the private key. To encrypt a private key using a GPG key from your keyring:
-
-```
-echo <your-private-key> | gpg -e --output private-key.gpg
-```
-
-Or, if you'd rather use a password to encrypt your keyfile, use this instead:
-
-```
-echo <your-private-key> | gpg -c --output private-key.gpg
-```
-
-The CLI also requires a JsonRPC endpoint for the blockchain you're interacting with. To easily provision this, create a `.env` file in the root of the repository and fill it in thusly:
-
-```
-ENDPOINT=<ethRpcEndpoint>
-```
-
-Finally, to verify a contract, you'll need an etherscan API key too. You can add this to your `.env` file thusly:
-
-```
-ETHERSCAN_API_KEY=<apikey>
-```
-
-NOTE: If you're not verifying contracts, you don't need to provide this environment variable at all.
 
 &nbsp;
 
