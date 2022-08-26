@@ -218,7 +218,7 @@ describe('Erc20Vault Tests', () => {
         )
         assert.fail('Should not have succeeded!')
       } catch (_err) {
-        const expectedErr = 'ERC20: transfer amount exceeds allowance'
+        const expectedErr = 'ERC20: insufficient allowance'
         assert(_err.message.includes(expectedErr))
       }
     })
