@@ -19,6 +19,9 @@ const SUPPORTED_NETWORKS = [
   'ambrosTestnet',
   'ethMainnet',
   'bscMainnet',
+  'goerli',
+  'prater',
+  'sepolia',
 ]
 
 const getEnvVarOrThow = _name => {
