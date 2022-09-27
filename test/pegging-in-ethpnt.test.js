@@ -3,10 +3,13 @@ const {
   deployUpgradeableContract,
   deployNonUpgradeableContract,
 } = require('./test-utils')
+const {
+  ZERO_ADDRESS,
+  ADDRESS_PROP,
+} = require('./test-constants')
 const assert = require('assert')
 const { prop } = require('ramda')
 const { BigNumber } = require('ethers')
-const { ADDRESS_PROP } = require('./test-constants')
 
 describe('Pegging In EthPNT Tests', () => {
   const SAMPLE_ORIGIN_CHAIN_ID = '0x00000000'
@@ -88,5 +91,29 @@ describe('Pegging In EthPNT Tests', () => {
     assert.strictEqual(pegInEvent.args[4], userData)
     assert.strictEqual(pegInEvent.args[5], SAMPLE_ORIGIN_CHAIN_ID)
     assert.strictEqual(pegInEvent.args[6], destinationChainId)
+  })
+
+  it('Should fail to peg in if `PNT_TOKEN_ADDRESS` is set to zero', async () => {
+    await VAULT_CONTRACT.changePntTokenAddress(ZERO_ADDRESS)
+    assert.strictEqual(await VAULT_CONTRACT.PNT_TOKEN_ADDRESS(), ZERO_ADDRESS)
+
+    const tokenAmount = 1337
+    const destinationAddress = getRandomEthAddress()
+    const userData = '0xc0ffee'
+    const destinationChainId = '0xffffffff'
+
+    try {
+      await VAULT_CONTRACT.connect(TOKEN_HOLDER)['pegIn(uint256,address,string,bytes,bytes4)'](
+        tokenAmount,
+        ETHPNT_TOKEN_ADDRESS,
+        destinationAddress,
+        userData,
+        destinationChainId,
+      )
+      assert.fail('Should not have succeeded!')
+    } catch (_err) {
+      const expectedError = '`PNT_TOKEN_ADDRESS` is set to zero address!'
+      assert(_err.message.includes(expectedError))
+    }
   })
 })
