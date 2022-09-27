@@ -281,7 +281,7 @@ contract Erc20Vault is
         if (_tokenAddress == address(weth)) {
             pegOutWeth(_tokenRecipient, _tokenAmount, "");
         } else {
-            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+            handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, "", false);
         }
         return true;
     }
@@ -301,12 +301,29 @@ contract Erc20Vault is
         } else {
             address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
             if (erc777Address == address(0)) {
-                return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
+                return handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, "", false);
             } else {
-                IERC777Upgradeable(erc777Address).send(_tokenRecipient, _tokenAmount, _userData);
-                return true;
+                return handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, _userData, true);
             }
         }
+    }
+
+    function handlePegOutTokenTransfer(
+        address _tokenAddress,
+        address _tokenRecipient,
+        uint256 _tokenAmount,
+        bytes memory _userData,
+        bool _isErc777Token
+    )
+        internal
+        returns (bool success)
+    {
+        if (_isErc777Token) {
+            IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
+        } else {
+            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+        }
+        return true;
     }
 
     receive() external payable { }
