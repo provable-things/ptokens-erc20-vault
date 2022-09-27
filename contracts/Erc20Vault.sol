@@ -30,8 +30,8 @@ contract Erc20Vault is
     IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
-    address public PNT_ADDRESS;
-    address public ETHPNT_ADDRESS;
+    address public PNT_TOKEN_ADDRESS;
+    address public ETHPNT_TOKEN_ADDRESS;
 
     event PegIn(
         address _tokenAddress,
@@ -314,25 +314,25 @@ contract Erc20Vault is
         return true;
     }
 
-    function changePntAddress(
+    function changePntTokenAddress(
         address _newAddress
     )
         public
         onlyPNetwork
         returns (bool success)
     {
-        PNT_ADDRESS = _newAddress;
+        PNT_TOKEN_ADDRESS = _newAddress;
         return true;
     }
 
-    function changeEthPntAddress(
+    function changeEthPntTokenAddress(
         address _newAddress
     )
         public
         onlyPNetwork
         returns (bool success)
     {
-        ETHPNT_ADDRESS = _newAddress;
+        ETHPNT_TOKEN_ADDRESS = _newAddress;
         return true;
     }
 }

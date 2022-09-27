@@ -24,15 +24,15 @@ describe('Change EthPNT Address', () => {
   })
 
   it('pNetwork can change EthPNT address', async () => {
-    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_ADDRESS(), ZERO_ADDRESS)
-    await VAULT_CONTRACT.changeEthPntAddress(SAMPLE_PNT_ADDRESS)
-    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_ADDRESS(), SAMPLE_PNT_ADDRESS)
+    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_TOKEN_ADDRESS(), ZERO_ADDRESS)
+    await VAULT_CONTRACT.changeEthPntTokenAddress(SAMPLE_PNT_ADDRESS)
+    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_TOKEN_ADDRESS(), SAMPLE_PNT_ADDRESS)
   })
 
   it('Non pNetwork cannot change EthPNT address', async () => {
-    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_ADDRESS(), ZERO_ADDRESS)
+    assert.strictEqual(await VAULT_CONTRACT.ETHPNT_TOKEN_ADDRESS(), ZERO_ADDRESS)
     try {
-      await NON_OWNED_VAULT_CONTRACT.changeEthPntAddress(SAMPLE_PNT_ADDRESS)
+      await NON_OWNED_VAULT_CONTRACT.changeEthPntTokenAddress(SAMPLE_PNT_ADDRESS)
       assert.fail('Should not have succeeded!')
     } catch (_err) {
       const expectedErr = 'Caller must be PNETWORK address!'
