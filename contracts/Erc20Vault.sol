@@ -152,7 +152,7 @@ contract Erc20Vault is
             // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
             // result in an event which will mint a PNT pToken on the other side of the bridge, thus
             // merging the PNT & EthPNT tokens for all intents and purposes.
-            _tokenAddress == ETHPNT_ADDRESS ? PNT_ADDRESS : _tokenAddress,
+            _tokenAddress == ETHPNT_TOKEN_ADDRESS ? PNT_TOKEN_ADDRESS : _tokenAddress,
             msg.sender,
             _tokenAmount,
             _destinationAddress,
