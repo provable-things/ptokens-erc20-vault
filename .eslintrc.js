@@ -19,7 +19,11 @@ module.exports = {
     "ethers": false,
     "upgrades": false,
   },
+  plugins: [
+    'no-only-tests',
+  ],
   rules: {
+    "no-only-tests/no-only-tests": "warn",
     "max-len": ["error", 120, 2, {
       ignoreUrls: true,
       ignoreComments: false,
