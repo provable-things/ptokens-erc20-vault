@@ -30,10 +30,6 @@ contract Erc20Vault is
     IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
-
-    // NOTE: The following are used in the special handling of the EthPNT token, where a peg in of
-    // EthPNT will result in an event which will mint pPNT on the other side of the bridge, thus
-    // merging the PNT & EthPNT tokens for all intents and purposes.
     address public PNT_ADDRESS;
     address public ETHPNT_ADDRESS;
 
@@ -153,7 +149,10 @@ contract Erc20Vault is
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20Upgradeable(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
         emit PegIn(
-            _tokenAddress,
+            // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
+            // result in an event which will mint a PNT pToken on the other side of the bridge, thus
+            // merging the PNT & EthPNT tokens for all intents and purposes.
+            _tokenAddress == ETHPNT_ADDRESS ? PNT_ADDRESS : _tokenAddress,
             msg.sender,
             _tokenAmount,
             _destinationAddress,
