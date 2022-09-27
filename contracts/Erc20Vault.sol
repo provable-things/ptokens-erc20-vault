@@ -344,9 +344,8 @@ contract Erc20Vault is
         } else {
             // NOTE: And so here we must peg out the total using as must PNT as possible, with
             // the remainder being sent as EthPNT...
-            uint256 ethPntAmount = _tokenAmount - vaultPntTokenBalance;
-            pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
-            ethPntContract.safeTransfer(_tokenRecipient, ethPntAmount);
+            pntContract.safeTransfer(_tokenRecipient, vaultPntTokenBalance);
+            ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount - vaultPntTokenBalance);
         }
     }
 
