@@ -21,13 +21,13 @@ contract Erc20Vault is
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     IERC1820RegistryUpgradeable constant private _erc1820 = IERC1820RegistryUpgradeable(
         0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24
-    );
+    ); //FIXME The name of this should be `SCREAMING_SNAKE_CASE`. Will it break storage slot upgradeability?
     bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
     bytes32 constant private Erc777Token_INTERFACE_HASH = keccak256("ERC777Token");
 
-    EnumerableSetUpgradeable.AddressSet private supportedTokens;
+    EnumerableSetUpgradeable.AddressSet private supportedTokens; // FIXME Ibid.
     address public PNETWORK;
-    IWETH public weth;
+    IWETH public weth; // FIXME Ibid.
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
     address public PNT_TOKEN_ADDRESS;
@@ -250,7 +250,7 @@ contract Erc20Vault is
         bytes memory _userData
     )
         internal
-        returns (bool)
+        returns (bool success)
     {
         // NOTE: This is a mitigation for the breaking changes introduced
         // by the Istanbul hard fork which caused the [out of gas] errors
@@ -276,14 +276,11 @@ contract Erc20Vault is
     )
         public
         onlyPNetwork
-        returns (bool)
+        returns (bool success)
     {
-        if (_tokenAddress == address(weth)) {
-            pegOutWeth(_tokenRecipient, _tokenAmount, "");
-        } else {
-            handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, "", false);
-        }
-        return true;
+        return _tokenAddress == address(weth)
+            ? pegOutWeth(_tokenRecipient, _tokenAmount, "")
+            : handlePegOutTokenTransfers(_tokenAddress, _tokenRecipient, _tokenAmount, "");
     }
 
     function pegOut(
@@ -296,34 +293,60 @@ contract Erc20Vault is
         onlyPNetwork
         returns (bool success)
     {
-        if (_tokenAddress == address(weth)) {
-            pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
-        } else {
-            address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
-            if (erc777Address == address(0)) {
-                return handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, "", false);
-            } else {
-                return handlePegOutTokenTransfer(_tokenAddress, _tokenRecipient, _tokenAmount, _userData, true);
-            }
-        }
+        return _tokenAddress == address(weth)
+            ? pegOutWeth(_tokenRecipient, _tokenAmount, _userData)
+            : handlePegOutTokenTransfers(_tokenAddress, _tokenRecipient, _tokenAmount, _userData);
     }
 
-    function handlePegOutTokenTransfer(
+    function handlePegOutTokenTransfers(
         address _tokenAddress,
         address _tokenRecipient,
         uint256 _tokenAmount,
-        bytes memory _userData,
-        bool _isErc777Token
+        bytes memory _userData
     )
         internal
         returns (bool success)
     {
-        if (_isErc777Token) {
+        address maybeErc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
+        if (maybeErc777Address != address(0)) {
+            // NOTE: Use the ERC777 `send` function so that ERC777 hooks are called...
             IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
         } else {
-            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+            // NOTE: Otherwise, we use standard ERC20 transfer function instead.
+            if (_tokenAddress == PNT_TOKEN_ADDRESS) {
+                handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
+            } else {
+                // NOTE: No special handling required for this token...
+                IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+            }
         }
         return true;
+    }
+
+    function handlePntPegOut(
+        address _tokenRecipient,
+        uint256 _tokenAmount,
+        bytes memory _userData
+    )
+        internal
+    {
+        IERC20Upgradeable pntContract = IERC20Upgradeable(PNT_TOKEN_ADDRESS);
+        IERC20Upgradeable ethPntContract = IERC20Upgradeable(ETHPNT_TOKEN_ADDRESS);
+        uint256 pntTokenBalance = pntContract.balanceOf(address(this));
+
+        if (_tokenAmount <= pntTokenBalance) {
+            // NOTE: If we can peg out entirely with PNT tokens, we do so...
+            pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
+        } else if (pntTokenBalance == 0) {
+            // NOTE: Here we must peg out entirely with ETHPNT tokens instead...
+            ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount);
+        } else {
+            // NOTE: And so here we must peg out the total using as must PNT as possible, with
+            // the remainder being EthPNT...
+            uint256 ethPntAmount = _tokenAmount - pntTokenBalance;
+            pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
+            ethPntContract.safeTransfer(_tokenRecipient, ethPntAmount);
+        }
     }
 
     receive() external payable { }
