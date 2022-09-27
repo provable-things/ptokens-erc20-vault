@@ -31,6 +31,11 @@ contract Erc20Vault is
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
 
+    // NOTE: The following are used in the special handling of the EthPNT token, where a peg in of
+    // EthPNT will result in an event which will mint pPNT on the other side of the bridge, thus
+    // merging the PNT & EthPNT tokens for all intents and purposes.
+    address public PNT_ADDRESS;
+
     event PegIn(
         address _tokenAddress,
         address _tokenSender,
@@ -306,6 +311,17 @@ contract Erc20Vault is
         returns (bool success)
     {
         ORIGIN_CHAIN_ID = _newOriginChainId;
+        return true;
+    }
+
+    function changePntAddress(
+        address _newAddress
+    )
+        public
+        onlyPNetwork
+        returns (bool success)
+    {
+        PNT_ADDRESS = _newAddress;
         return true;
     }
 }
