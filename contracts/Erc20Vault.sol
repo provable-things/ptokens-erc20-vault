@@ -148,11 +148,18 @@ contract Erc20Vault is
     {
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20Upgradeable(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
+
+        // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
+        // result in an event which will mint a PNT pToken on the other side of the bridge, thus
+        // merging the PNT & EthPNT tokens for all intents and purposes.
+        address normalizedTokenAddress = _tokenAddress == ETHPNT_TOKEN_ADDRESS
+            ? PNT_TOKEN_ADDRESS
+            : _tokenAddress;
+
+        require(normalizedTokenAddress != address(0), "`PNT_TOKEN_ADDRESS` is set to zero address!");
+
         emit PegIn(
-            // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
-            // result in an event which will mint a PNT pToken on the other side of the bridge, thus
-            // merging the PNT & EthPNT tokens for all intents and purposes.
-            _tokenAddress == ETHPNT_TOKEN_ADDRESS ? PNT_TOKEN_ADDRESS : _tokenAddress,
+            normalizedTokenAddress,
             msg.sender,
             _tokenAmount,
             _destinationAddress,
@@ -160,6 +167,7 @@ contract Erc20Vault is
             ORIGIN_CHAIN_ID,
             _destinationChainId
         );
+
         return true;
     }
 
