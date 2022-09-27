@@ -250,7 +250,7 @@ contract Erc20Vault is
         bytes memory _userData
     )
         internal
-        returns (bool success)
+        returns (bool)
     {
         // NOTE: This is a mitigation for the breaking changes introduced
         // by the Istanbul hard fork which caused the [out of gas] errors
@@ -280,7 +280,7 @@ contract Erc20Vault is
     {
         return _tokenAddress == address(weth)
             ? pegOutWeth(_tokenRecipient, _tokenAmount, "")
-            : handlePegOutTokenTransfers(_tokenAddress, _tokenRecipient, _tokenAmount, "");
+            : pegOutTokens(_tokenAddress, _tokenRecipient, _tokenAmount, "");
     }
 
     function pegOut(
@@ -295,10 +295,10 @@ contract Erc20Vault is
     {
         return _tokenAddress == address(weth)
             ? pegOutWeth(_tokenRecipient, _tokenAmount, _userData)
-            : handlePegOutTokenTransfers(_tokenAddress, _tokenRecipient, _tokenAmount, _userData);
+            : pegOutTokens(_tokenAddress, _tokenRecipient, _tokenAmount, _userData);
     }
 
-    function handlePegOutTokenTransfers(
+    function pegOutTokens(
         address _tokenAddress,
         address _tokenRecipient,
         uint256 _tokenAmount,
@@ -307,43 +307,44 @@ contract Erc20Vault is
         internal
         returns (bool success)
     {
-        address maybeErc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
-        if (maybeErc777Address != address(0)) {
-            // NOTE: Use the ERC777 `send` function so that ERC777 hooks are called...
+        if (_tokenAddress == PNT_TOKEN_ADDRESS) {
+            handlePntPegOut(_tokenRecipient, _tokenAmount);
+        } else if (tokenIsErc777(_tokenAddress)) {
+            // NOTE: This is an ERC777 token, so let's use its `send` function so that hooks are called...
             IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
         } else {
             // NOTE: Otherwise, we use standard ERC20 transfer function instead.
-            if (_tokenAddress == PNT_TOKEN_ADDRESS) {
-                handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
-            } else {
-                // NOTE: No special handling required for this token...
-                IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
-            }
+            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         }
         return true;
     }
 
+    function tokenIsErc777(address _tokenAddress) view internal returns (bool) {
+        return _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH) != address(0);
+    }
+
     function handlePntPegOut(
         address _tokenRecipient,
-        uint256 _tokenAmount,
-        bytes memory _userData
+        uint256 _tokenAmount
     )
         internal
     {
         IERC20Upgradeable pntContract = IERC20Upgradeable(PNT_TOKEN_ADDRESS);
         IERC20Upgradeable ethPntContract = IERC20Upgradeable(ETHPNT_TOKEN_ADDRESS);
-        uint256 pntTokenBalance = pntContract.balanceOf(address(this));
 
-        if (_tokenAmount <= pntTokenBalance) {
+        // NOTE: First we need to know how much PNT this vault holds...
+        uint256 vaultPntTokenBalance = pntContract.balanceOf(address(this));
+
+        if (_tokenAmount <= vaultPntTokenBalance) {
             // NOTE: If we can peg out entirely with PNT tokens, we do so...
             pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
-        } else if (pntTokenBalance == 0) {
+        } else if (vaultPntTokenBalance == 0) {
             // NOTE: Here we must peg out entirely with ETHPNT tokens instead...
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount);
         } else {
             // NOTE: And so here we must peg out the total using as must PNT as possible, with
-            // the remainder being EthPNT...
-            uint256 ethPntAmount = _tokenAmount - pntTokenBalance;
+            // the remainder being sent as EthPNT...
+            uint256 ethPntAmount = _tokenAmount - vaultPntTokenBalance;
             pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
             ethPntContract.safeTransfer(_tokenRecipient, ethPntAmount);
         }
