@@ -35,6 +35,7 @@ contract Erc20Vault is
     // EthPNT will result in an event which will mint pPNT on the other side of the bridge, thus
     // merging the PNT & EthPNT tokens for all intents and purposes.
     address public PNT_ADDRESS;
+    address public ETHPNT_ADDRESS;
 
     event PegIn(
         address _tokenAddress,
@@ -322,6 +323,17 @@ contract Erc20Vault is
         returns (bool success)
     {
         PNT_ADDRESS = _newAddress;
+        return true;
+    }
+
+    function changeEthPntAddress(
+        address _newAddress
+    )
+        public
+        onlyPNetwork
+        returns (bool success)
+    {
+        ETHPNT_ADDRESS = _newAddress;
         return true;
     }
 }
