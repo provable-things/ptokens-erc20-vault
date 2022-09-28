@@ -31,7 +31,7 @@ contract Erc20Vault is
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
     address public constant PNT_TOKEN_ADDRESS = 0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD;
-    address public constant ETHPNT_TOKEN_ADDRESS = 0x8474a898677C3bc97f35A86c387aE34Bf272C860;
+    address public constant ETHPNT_TOKEN_ADDRESS = 0xf4eA6B892853413bD9d9f1a5D3a620A0ba39c5b2;
 
     event PegIn(
         address _tokenAddress,
