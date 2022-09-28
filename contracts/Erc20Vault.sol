@@ -21,13 +21,13 @@ contract Erc20Vault is
     using EnumerableSetUpgradeable for EnumerableSetUpgradeable.AddressSet;
     IERC1820RegistryUpgradeable constant private _erc1820 = IERC1820RegistryUpgradeable(
         0x1820a4B7618BdE71Dce8cdc73aAB6C95905faD24
-    ); //FIXME The name of this should be `SCREAMING_SNAKE_CASE`. Will it break storage slot upgradeability?
+    );
     bytes32 constant private TOKENS_RECIPIENT_INTERFACE_HASH = keccak256("ERC777TokensRecipient");
     bytes32 constant private Erc777Token_INTERFACE_HASH = keccak256("ERC777Token");
 
-    EnumerableSetUpgradeable.AddressSet private supportedTokens; // FIXME Ibid.
+    EnumerableSetUpgradeable.AddressSet private supportedTokens;
     address public PNETWORK;
-    IWETH public weth; // FIXME Ibid.
+    IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
     address public constant PNT_TOKEN_ADDRESS = 0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD;
@@ -151,7 +151,7 @@ contract Erc20Vault is
 
         // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
         // result in an event which will mint a PNT pToken on the other side of the bridge, thus
-        // merging the PNT & EthPNT tokens for all intents and purposes.
+        // making fungible the PNT & EthPNT tokens.
         address normalizedTokenAddress = _tokenAddress == ETHPNT_TOKEN_ADDRESS
             ? PNT_TOKEN_ADDRESS
             : _tokenAddress;
@@ -339,13 +339,13 @@ contract Erc20Vault is
         uint256 vaultPntTokenBalance = pntContract.balanceOf(address(this));
 
         if (_tokenAmount <= vaultPntTokenBalance) {
-            // NOTE: If we can peg out entirely with PNT tokens, we do so...
+            // NOTE: If we can peg out _entirely_ with PNT tokens, we do so...
             pntContract.send(_tokenRecipient, _tokenAmount, _userData);
         } else if (vaultPntTokenBalance == 0) {
             // NOTE: Here we must peg out entirely with ETHPNT tokens instead...
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount);
         } else {
-            // NOTE: And so here we must peg out the total using as must PNT as possible, with
+            // NOTE: And so here we must peg out the total using as much PNT as possible, with
             // the remainder being sent as EthPNT...
             pntContract.send(_tokenRecipient, vaultPntTokenBalance, _userData);
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount - vaultPntTokenBalance);
