@@ -156,7 +156,7 @@ contract Erc20Vault is
             ? PNT_TOKEN_ADDRESS
             : _tokenAddress;
 
-        require(normalizedTokenAddress != address(0), "`PNT_TOKEN_ADDRESS` is set to zero address!");
+        require(normalizedTokenAddress != address(0), "`normalizedTokenAddress` is set to zero address!");
 
         emit PegIn(
             normalizedTokenAddress,
