@@ -308,7 +308,7 @@ contract Erc20Vault is
         returns (bool success)
     {
         if (_tokenAddress == PNT_TOKEN_ADDRESS) {
-            handlePntPegOut(_tokenRecipient, _tokenAmount);
+            handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
         } else if (tokenIsErc777(_tokenAddress)) {
             // NOTE: This is an ERC777 token, so let's use its `send` function so that hooks are called...
             IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
@@ -325,11 +325,14 @@ contract Erc20Vault is
 
     function handlePntPegOut(
         address _tokenRecipient,
-        uint256 _tokenAmount
+        uint256 _tokenAmount,
+        bytes memory _userData
     )
         internal
     {
-        IERC20Upgradeable pntContract = IERC20Upgradeable(PNT_TOKEN_ADDRESS);
+        // NOTE: The PNT contract is ERC777...
+        IERC777Upgradeable pntContract = IERC777Upgradeable(PNT_TOKEN_ADDRESS);
+        // NOTE: Whilst the EthPNT contract is ERC20.
         IERC20Upgradeable ethPntContract = IERC20Upgradeable(ETHPNT_TOKEN_ADDRESS);
 
         // NOTE: First we need to know how much PNT this vault holds...
@@ -337,14 +340,14 @@ contract Erc20Vault is
 
         if (_tokenAmount <= vaultPntTokenBalance) {
             // NOTE: If we can peg out entirely with PNT tokens, we do so...
-            pntContract.safeTransfer(_tokenRecipient, _tokenAmount);
+            pntContract.send(_tokenRecipient, _tokenAmount, _userData);
         } else if (vaultPntTokenBalance == 0) {
             // NOTE: Here we must peg out entirely with ETHPNT tokens instead...
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount);
         } else {
             // NOTE: And so here we must peg out the total using as must PNT as possible, with
             // the remainder being sent as EthPNT...
-            pntContract.safeTransfer(_tokenRecipient, vaultPntTokenBalance);
+            pntContract.send(_tokenRecipient, vaultPntTokenBalance, _userData);
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount - vaultPntTokenBalance);
         }
     }
