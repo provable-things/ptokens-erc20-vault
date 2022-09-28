@@ -364,26 +364,4 @@ contract Erc20Vault is
         ORIGIN_CHAIN_ID = _newOriginChainId;
         return true;
     }
-
-    function changePntTokenAddress(
-        address _newAddress
-    )
-        public
-        onlyPNetwork
-        returns (bool success)
-    {
-        PNT_TOKEN_ADDRESS = _newAddress;
-        return true;
-    }
-
-    function changeEthPntTokenAddress(
-        address _newAddress
-    )
-        public
-        onlyPNetwork
-        returns (bool success)
-    {
-        ETHPNT_TOKEN_ADDRESS = _newAddress;
-        return true;
-    }
 }
