@@ -21,10 +21,12 @@ module.exports = {
   },
   plugins: [
     'no-only-tests',
+    'no-skip-tests',
   ],
   rules: {
-    "no-only-tests/no-only-tests": "warn",
-    "max-len": ["error", 120, 2, {
+    'no-skip-tests/no-skip-tests': 'warn',
+    'no-only-tests/no-only-tests': 'warn',
+    'max-len': ["error", 120, 2, {
       ignoreUrls: true,
       ignoreComments: false,
       ignoreRegExpLiterals: true,
