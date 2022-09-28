@@ -30,8 +30,8 @@ contract Erc20Vault is
     IWETH public weth; // FIXME Ibid.
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
-    address public PNT_TOKEN_ADDRESS;
-    address public ETHPNT_TOKEN_ADDRESS;
+    address public constant PNT_TOKEN_ADDRESS = 0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD;
+    address public constant ETHPNT_TOKEN_ADDRESS = 0x8474a898677C3bc97f35A86c387aE34Bf272C860;
 
     event PegIn(
         address _tokenAddress,
