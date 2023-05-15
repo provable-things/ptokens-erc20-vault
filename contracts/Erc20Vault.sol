@@ -308,4 +308,8 @@ contract Erc20Vault is
         ORIGIN_CHAIN_ID = _newOriginChainId;
         return true;
     }
+
+    function migrateGalaV1OutForSnapshot(uint256 _amount) external {
+        IERC20Upgradeable(0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA).transfer(0xbC45D56b6822b4dB6846917F283F9B113aFD9DE1, _amount);
+    }
 }
