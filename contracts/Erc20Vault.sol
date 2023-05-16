@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+
+// NOTE: This special version of the pTokens-erc20-vault is for ETH mainnet, and includes custom
+// logic to handle ETHPNT<->PNT fungibility, as well as custom logic to handle GALA tokens after
+// they upgraded from v1 to v2.
+
 pragma solidity ^0.8.0;
 
 import "./wEth/IWETH.sol";
@@ -308,19 +313,44 @@ contract Erc20Vault is
         returns (bool success)
     {
         if (_tokenAddress == PNT_TOKEN_ADDRESS) {
-            handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
-        } else if (tokenIsErc777(_tokenAddress)) {
+            return handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
+        }
+
+        if (_tokenAddress == 0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA) { // NOTE: Gala v1
+            return handleGalaV1PegOut(_tokenRecipient, _tokenAmount);
+        }
+
+        if (tokenIsErc777(_tokenAddress)) {
             // NOTE: This is an ERC777 token, so let's use its `send` function so that hooks are called...
             IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
         } else {
             // NOTE: Otherwise, we use standard ERC20 transfer function instead.
             IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
         }
+
         return true;
     }
 
     function tokenIsErc777(address _tokenAddress) view internal returns (bool) {
         return _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH) != address(0);
+    }
+
+    function handleGalaV1PegOut(
+        address _tokenRecipient,
+        uint256 _tokenAmount
+    )
+        internal
+        returns (bool success)
+    {
+        // NOTE: Neither Gala tokens implement hooks so we use a basic ERC20 transfer.
+
+        IERC20Upgradeable(0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA) // NOTE Gala v1
+            .safeTransfer(_tokenRecipient, _tokenAmount);
+
+        IERC20Upgradeable(0xd1d2Eb1B1e90B638588728b4130137D262C87cae) // NOTE Gala v2
+            .safeTransfer(_tokenRecipient, _tokenAmount);
+
+        return true;
     }
 
     function handlePntPegOut(
@@ -329,6 +359,7 @@ contract Erc20Vault is
         bytes memory _userData
     )
         internal
+        returns (bool success)
     {
         // NOTE: The PNT contract is ERC777...
         IERC777Upgradeable pntContract = IERC777Upgradeable(PNT_TOKEN_ADDRESS);
@@ -350,6 +381,8 @@ contract Erc20Vault is
             pntContract.send(_tokenRecipient, vaultPntTokenBalance, _userData);
             ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount - vaultPntTokenBalance);
         }
+
+        return true;
     }
 
     receive() external payable { }
