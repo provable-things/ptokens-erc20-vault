@@ -1,4 +1,9 @@
 // SPDX-License-Identifier: MIT
+
+// NOTE: This special version of the pTokens-erc20-vault is for ETH mainnet, and includes custom
+// logic to handle ETHPNT<->PNT fungibility, as well as custom logic to handle GALA tokens after
+// they upgraded from v1 to v2.
+
 pragma solidity ^0.8.0;
 
 import "./wEth/IWETH.sol";
@@ -30,6 +35,8 @@ contract Erc20Vault is
     IWETH public weth;
     bytes4 public ORIGIN_CHAIN_ID;
     address private wEthUnwrapperAddress;
+    address public constant PNT_TOKEN_ADDRESS = 0x89Ab32156e46F46D02ade3FEcbe5Fc4243B9AAeD;
+    address public constant ETHPNT_TOKEN_ADDRESS = 0xf4eA6B892853413bD9d9f1a5D3a620A0ba39c5b2;
 
     event PegIn(
         address _tokenAddress,
@@ -146,8 +153,18 @@ contract Erc20Vault is
     {
         require(_tokenAmount > 0, "Token amount must be greater than zero!");
         IERC20Upgradeable(_tokenAddress).safeTransferFrom(msg.sender, address(this), _tokenAmount);
+
+        // NOTE: This is the special handling of the EthPNT token, where a peg in of EthPNT will
+        // result in an event which will mint a PNT pToken on the other side of the bridge, thus
+        // making fungible the PNT & EthPNT tokens.
+        address normalizedTokenAddress = _tokenAddress == ETHPNT_TOKEN_ADDRESS
+            ? PNT_TOKEN_ADDRESS
+            : _tokenAddress;
+
+        require(normalizedTokenAddress != address(0), "`normalizedTokenAddress` is set to zero address!");
+
         emit PegIn(
-            _tokenAddress,
+            normalizedTokenAddress,
             msg.sender,
             _tokenAmount,
             _destinationAddress,
@@ -155,6 +172,7 @@ contract Erc20Vault is
             ORIGIN_CHAIN_ID,
             _destinationChainId
         );
+
         return true;
     }
 
@@ -263,14 +281,11 @@ contract Erc20Vault is
     )
         public
         onlyPNetwork
-        returns (bool)
+        returns (bool success)
     {
-        if (_tokenAddress == address(weth)) {
-            pegOutWeth(_tokenRecipient, _tokenAmount, "");
-        } else {
-            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
-        }
-        return true;
+        return _tokenAddress == address(weth)
+            ? pegOutWeth(_tokenRecipient, _tokenAmount, "")
+            : pegOutTokens(_tokenAddress, _tokenRecipient, _tokenAmount, "");
     }
 
     function pegOut(
@@ -283,17 +298,91 @@ contract Erc20Vault is
         onlyPNetwork
         returns (bool success)
     {
-        if (_tokenAddress == address(weth)) {
-            pegOutWeth(_tokenRecipient, _tokenAmount, _userData);
-        } else {
-            address erc777Address = _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH);
-            if (erc777Address == address(0)) {
-                return pegOut(_tokenRecipient, _tokenAddress, _tokenAmount);
-            } else {
-                IERC777Upgradeable(erc777Address).send(_tokenRecipient, _tokenAmount, _userData);
-                return true;
-            }
+        return _tokenAddress == address(weth)
+            ? pegOutWeth(_tokenRecipient, _tokenAmount, _userData)
+            : pegOutTokens(_tokenAddress, _tokenRecipient, _tokenAmount, _userData);
+    }
+
+    function pegOutTokens(
+        address _tokenAddress,
+        address _tokenRecipient,
+        uint256 _tokenAmount,
+        bytes memory _userData
+    )
+        internal
+        returns (bool success)
+    {
+        if (_tokenAddress == PNT_TOKEN_ADDRESS) {
+            return handlePntPegOut(_tokenRecipient, _tokenAmount, _userData);
         }
+
+        if (_tokenAddress == 0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA) { // NOTE: Gala v1
+            return handleGalaV1PegOut(_tokenRecipient, _tokenAmount);
+        }
+
+        if (tokenIsErc777(_tokenAddress)) {
+            // NOTE: This is an ERC777 token, so let's use its `send` function so that hooks are called...
+            IERC777Upgradeable(_tokenAddress).send(_tokenRecipient, _tokenAmount, _userData);
+        } else {
+            // NOTE: Otherwise, we use standard ERC20 transfer function instead.
+            IERC20Upgradeable(_tokenAddress).safeTransfer(_tokenRecipient, _tokenAmount);
+        }
+
+        return true;
+    }
+
+    function tokenIsErc777(address _tokenAddress) view internal returns (bool) {
+        return _erc1820.getInterfaceImplementer(_tokenAddress, Erc777Token_INTERFACE_HASH) != address(0);
+    }
+
+    function handleGalaV1PegOut(
+        address _tokenRecipient,
+        uint256 _tokenAmount
+    )
+        internal
+        returns (bool success)
+    {
+        // NOTE: Neither Gala tokens implement hooks so we use a basic ERC20 transfer.
+
+        IERC20Upgradeable(0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA) // NOTE Gala v1
+            .safeTransfer(_tokenRecipient, _tokenAmount);
+
+        IERC20Upgradeable(0xd1d2Eb1B1e90B638588728b4130137D262C87cae) // NOTE Gala v2
+            .safeTransfer(_tokenRecipient, _tokenAmount);
+
+        return true;
+    }
+
+    function handlePntPegOut(
+        address _tokenRecipient,
+        uint256 _tokenAmount,
+        bytes memory _userData
+    )
+        internal
+        returns (bool success)
+    {
+        // NOTE: The PNT contract is ERC777...
+        IERC777Upgradeable pntContract = IERC777Upgradeable(PNT_TOKEN_ADDRESS);
+        // NOTE: Whilst the EthPNT contract is ERC20.
+        IERC20Upgradeable ethPntContract = IERC20Upgradeable(ETHPNT_TOKEN_ADDRESS);
+
+        // NOTE: First we need to know how much PNT this vault holds...
+        uint256 vaultPntTokenBalance = pntContract.balanceOf(address(this));
+
+        if (_tokenAmount <= vaultPntTokenBalance) {
+            // NOTE: If we can peg out _entirely_ with PNT tokens, we do so...
+            pntContract.send(_tokenRecipient, _tokenAmount, _userData);
+        } else if (vaultPntTokenBalance == 0) {
+            // NOTE: Here we must peg out entirely with ETHPNT tokens instead...
+            ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount);
+        } else {
+            // NOTE: And so here we must peg out the total using as much PNT as possible, with
+            // the remainder being sent as EthPNT...
+            pntContract.send(_tokenRecipient, vaultPntTokenBalance, _userData);
+            ethPntContract.safeTransfer(_tokenRecipient, _tokenAmount - vaultPntTokenBalance);
+        }
+
+        return true;
     }
 
     receive() external payable { }
