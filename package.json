@@ -4,10 +4,11 @@
   "description": "The pToken ERC20 vault smart-contract & CLI",
   "main": "cli.js",
   "scripts": {
+    "lint": "npx eslint .",
     "test": "npm run tests",
     "tests": "ENDPOINT=http://localhost:8545 npx hardhat test",
     "compile": "ENDPOINT=http://localhost:8545 npx hardhat compile",
-    "lint": "npx eslint ."
+    "showStorage": "ENDPOINT=http://localhost:8545 node ./scripts/show-storage-layout.js"
   },
   "repository": {
     "type": "git",
@@ -51,6 +52,7 @@
     "eslint-plugin-promise": "^4.3.1",
     "eslint-plugin-standard": "^4.1.0",
     "ethereum-waffle": "^3.4.4",
+    "hardhat-storage-layout": "^0.1.7",
     "mocha": "^6.2.3"
   }
 }
